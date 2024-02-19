@@ -6,7 +6,10 @@ const { validateCreateUser, validateLogin } = require('../validation/validation'
 const cloudinary = require("../middleware/cloudinary");
 const { dynamicEmail } = require("../html");
 const bcrypt = require("bcrypt");
+const crypto = require('crypto');
  const {Email} = require("../validation/email.js");
+ const nodemailer= require("nodemailer")
+ require("dotenv").config()
 
 exports.createUser = async (req, res) => {
   try {
@@ -175,7 +178,7 @@ exports. verify = async (req, res) => {
       })
     }
     if (user.isVerified === true) {
-      return res.status(200).send("You have been successfully verified. Kindly visit the login page.");
+      return res.status(200).json("You have been successfully verified. Kindly visit the login page.");
     }
 
   } catch (err) {
@@ -236,3 +239,79 @@ exports.getAllUsers= async(req,res)=>{
     res.status(200).json({message:"current users", users})
   }
 }
+
+exports.deleteUser = async (req, res) => {
+  try {
+      const { userId } = req.body;
+
+      // Check if userId is provided
+      if (!userId) {
+          return res.status(400).json({ error: 'User ID is required' });
+      }
+
+      // Find the user by ID and delete
+      const deletedUser = await userModel.findByIdAndDelete(userId);
+
+      // Check if user exists
+      if (!deletedUser) {
+          return res.status(404).json({ error: 'User not found' });
+      }
+
+      return res.status(200).json({ message: 'User deleted successfully', data: deletedUser });
+  } catch (error) {
+      console.error('Error deleting user:', error.message);
+      return res.status(500).json(error.message);
+  }
+};
+
+
+
+exports.resetPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        // Check if email is provided
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
+        }
+
+        // Generate a reset token
+        const resetToken = crypto.randomBytes(20).toString('hex');
+
+        // Find the user by email
+        const user = await userModel.findOne({ email });
+
+        // If user doesn't exist, return error
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Set reset token and expiry in user document
+        user.resetPasswordToken = resetToken;
+        user.resetPasswordExpires = Date.now() + 3600000; // Token valid for 1 hour
+
+        // Save the updated user document
+        await user.save();
+
+        // Construct email options
+        const emailOptions = {
+            email: user.email,
+            subject: 'Password Reset Request',
+            html: `
+                <p>You are receiving this email because you (or someone else) has requested the reset of the password for your account.</p>
+                <p>Please click on the following link, or paste this into your browser to complete the process:</p>
+                <p><a href="http://${req.headers.host}/reset/${resetToken}">Reset Password</a></p>
+                <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
+            `
+        };
+
+        // Send password reset email
+        await Email(emailOptions);
+
+        // Respond with success message
+        return res.status(200).json({ message: 'Reset password email sent successfully' });
+    } catch (error) {
+        console.error('Error resetting password:', error.message);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+};

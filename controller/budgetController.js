@@ -80,3 +80,27 @@ exports.createBudget = async (req, res) => {
       res.status(200).json({message:"current budgets", budgets})
     }
   }
+
+  exports.deleteBudget = async (req, res) => {
+    try {
+        const { budgetId } = req.body;
+
+        // Check if budgetId is provided
+        if (!budgetId) {
+            return res.status(400).json({ error: 'Budget ID is required' });
+        }
+
+        // Find the budget by ID and delete
+        const deletedBudget = await budgetModel.findByIdAndDelete(budgetId);
+
+        // Check if budget exists
+        if (!deletedBudget) {
+            return res.status(404).json({ error: 'Budget not found' });
+        }
+
+        return res.status(200).json({ message: 'Budget deleted successfully', data: deletedBudget });
+    } catch (error) {
+        console.error('Error deleting budget:', error.message);
+        return res.status(500).json(error.message);
+    }
+};
