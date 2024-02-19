@@ -1,5 +1,6 @@
 const budgetModel= require("../models/budgetModel")
 const userModel= require("../models/userModel")
+const { DateTime } = require('luxon');
 
 exports.createBudget = async (req, res) => {
     try {
@@ -32,25 +33,24 @@ exports.createBudget = async (req, res) => {
             return res.status(400).json({ error: 'Invalid categories provided' });
         }
   
-        // Set start and end dates based on budget type
+        // Set start and end dates based on budget type using Luxon
         let startDate, endDate;
+        const now = DateTime.local(); // Get current date and time
         if (budgetType === 'monthly') {
-            const now = new Date();
-            startDate = new Date(now.getFullYear(), now.getMonth(), 1); // First day of current month
-            endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0); // Last day of current month
+            startDate = now.startOf('month'); // First day of current month
+            endDate = now.endOf('month'); // Last day of current month
         } else if (budgetType === 'yearly') {
-            const now = new Date();
-            startDate = new Date(now.getFullYear(), 0, 1); // First day of current year
-            endDate = new Date(now.getFullYear(), 11, 31); // Last day of current year
+            startDate = now.startOf('year'); // First day of current year
+            endDate = now.endOf('year'); // Last day of current year
         } else {
             return res.status(400).json({ error: 'Invalid budget type' });
         }
   
-        // Create a new budget with start and end dates
+        // Create a new budget with Luxon dates
         const budget = new budgetModel({
             user: userId,
-            startDate: startDate,
-            endDate: endDate,
+            startDate: startDate.toJSDate(), // Convert Luxon DateTime to JavaScript Date object
+            endDate: endDate.toJSDate(), // Convert Luxon DateTime to JavaScript Date object
             categories: categories.map(category => ({
                 category: category.category,
                 amount: category.amount,
@@ -66,7 +66,8 @@ exports.createBudget = async (req, res) => {
         console.error('Error creating budget:', error.message);
         return res.status(500).json(error.message);
     }
-  };
+};
+
   
   exports.getAllBudgets= async(req,res)=>{
 
