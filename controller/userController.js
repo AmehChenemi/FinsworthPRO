@@ -160,7 +160,7 @@ exports. resendOTP = async (req, res) => {
 //Function to verify a new user with an OTP
 exports. verify = async (req, res) => {
   try {
-    const id = req.params.id;
+    const id = req.body;
     //const token = req.params.token;
     const user = await userModel.findById(id);
     const { userInput } = req.body;
@@ -179,9 +179,9 @@ exports. verify = async (req, res) => {
     }
 
   } catch (err) {
-      return res.status(500).json({
-        message: "Internal server error: " + err.message,
-      });
+      return res.status(500).json(
+         err.message
+      );
   }
 };
 
@@ -224,3 +224,5 @@ exports. login = async (req, res) => {
     return res.status(500).json(error.message);
   }
 };
+
+

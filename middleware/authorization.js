@@ -17,11 +17,13 @@ const auth = async (req, res, next) => {
             const user = await userModel.findById(decodedToken._id);
 
             if (!user) {
-                return res.status(404).json({ error: 'User not found' });
+                return res.status(404).json({ error:'User not found'});
             }
 
             req.user = user;
+
             next();
+            
         } catch (error) {
             return res.status(401).json( error.message);
         }
