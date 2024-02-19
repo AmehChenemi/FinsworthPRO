@@ -1,5 +1,5 @@
 const express= require("express")
-const userModel= require("../model/userModel")
+const userModel= require("../models/userModel")
 const { gentoken } = require('../jwt');
 const jwt = require("jsonwebtoken");
 const { validateCreateUser, validateLogin } = require('../validation/validation');
@@ -225,4 +225,14 @@ exports. login = async (req, res) => {
   }
 };
 
+exports.getAllUsers= async(req,res)=>{
 
+  const users= await userModel.find(req.params)
+
+  if(!users){
+    res.status(404).json('no users available')
+  }
+  else{
+    res.status(200).json({message:"current users", users})
+  }
+}

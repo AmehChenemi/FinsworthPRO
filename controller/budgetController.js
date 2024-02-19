@@ -1,5 +1,5 @@
-const budgetModel= require("../model/budgetModel")
-const userModel= require("../model/userModel")
+const budgetModel= require("../models/budgetModel")
+const userModel= require("../models/userModel")
 
 exports.createBudget = async (req, res) => {
     try {
@@ -68,3 +68,14 @@ exports.createBudget = async (req, res) => {
     }
   };
   
+  exports.getAllBudgets= async(req,res)=>{
+
+    const budgets= await budgetModel.find(req.params)
+  
+    if(!budgets){
+      res.status(404).json('no users available')
+    }
+    else{
+      res.status(200).json({message:"current budgets", budgets})
+    }
+  }
