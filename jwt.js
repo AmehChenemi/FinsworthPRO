@@ -1,4 +1,4 @@
-require("./model/userModel")
+require("./models/userModel.js")
 require('dotenv').config();
 
 const gentoken = (user) => {

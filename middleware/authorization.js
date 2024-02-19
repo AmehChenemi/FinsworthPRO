@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const userModel = require("../model/userModel");
+const userModel = require("../models/userModel");
 require("dotenv").config();
 
 const auth = async (req, res, next) => {
@@ -35,7 +35,7 @@ const isAdmin = async (req, res, next) => {
         const user = req.user;
 
         // Check if the role is explicitly set to "Admin" or if it's not set (defaults to "User")
-        if (!user || user.role !== "Admin") {
+        if (!user || user.isAdmin !== "true") {
             return res.status(403).json({ error: 'You are not authorized to perform this action' });
         }
 

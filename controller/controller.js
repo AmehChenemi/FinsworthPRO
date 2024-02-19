@@ -1,5 +1,5 @@
 const express= require("express")
-const userModel= require("../model/userModel")
+const userModel= require("../models/userModel.js")
 const { gentoken } = require('../jwt');
 const jwt = require("jsonwebtoken");
 const { validateCreateUser, validateLogin } = require('../validation/validation');
@@ -7,6 +7,7 @@ const cloudinary = require("../middleware/cloudinary");
 const { dynamicEmail } = require("../html");
 const bcrypt = require("bcrypt");
  const {Email} = require("../validation/email.js");
+const { isAdmin } = require("../middleware/authorization.js");
 
 exports.createUser = async (req, res) => {
   try {
@@ -224,3 +225,48 @@ exports. login = async (req, res) => {
     return res.status(500).json(error.message);
   }
 };
+
+
+/*exports.onboardUser = async(req, res)=>{
+  try {
+    const id = req.body
+    const userId = await userModel.findById(id)
+    const {firstName, lastName, email} = req.body
+
+
+    isAdmin === true
+    if (!isAdmin ) {
+      return res.status(400).json({message:'You are not allowed to perform this action'})
+    }
+    const generateRandomPassword = 
+     const user = new user.create({
+      firstName, lastName, email:email.toLowerCase()
+     })
+    
+        // Sending a verification email to the user
+        const subject = 'Kindly verify your account';
+        const link = `${req.protocol}://${req.get('host')}/updateuser/${user._id}/${user.token}`;
+        const html = dynamicMail(link, user.firstName.toUpperCase(), user.lastName.toUpperCase().slice(0, 1));
+        await sendMail({
+            email: user.email,
+            subject,
+            html
+        });
+
+    // const subject = 'Email Verification'
+    // const html = dynamicEmail(fullName, otp)
+    //   Email({
+    //     email: user.email,
+    //     html,
+    //     subject
+    //   })
+      await user.save()
+      return res.status(200).json({
+        message: "Please check your email for your login details and sign in with the password sent to your email"
+      })
+    
+  } catch (err) {
+    return res.status(500).json(err.message);
+    
+  }
+}*/

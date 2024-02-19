@@ -27,11 +27,11 @@ const userSchema= new mongoose.Schema({
     newCode:{
         type:String
     },
-    role:{
-        type:String,
-        enum:['Director','Manager'],
-        required: true
-    },
+    // role:{
+    //     type:String,
+    //     enum:['CEO'],
+    //     required: true
+    // },
 
     userInput:{
         type:String
@@ -40,18 +40,18 @@ const userSchema= new mongoose.Schema({
 
     isAdmin:{
         type:Boolean,
-        default:false
+        default:true
         
     },
-    isVerified:{
+    isVerified:{ 
         type:Boolean,
         default:false
     },
     
-    token:{
-        type:String
+    // token:{
+    //     type:String
         
-    },
+    // },
     profilepicture:{
         public_id:{
             type:String,
@@ -62,9 +62,10 @@ const userSchema= new mongoose.Schema({
             required:false
         },
     },
-    budgets: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Budget' }]
-    
+    acctOfficer: [{ type: mongoose.Schema.Types.ObjectId, ref: 'accountOfficer' }]
+    // budgets: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Budget' }]
 
+    
 },{timestamps:true})
 
 // expenseSchema.pre("save", async function (next){
