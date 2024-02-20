@@ -3,13 +3,9 @@ const Joi = require("@hapi/joi");
 
 const validateCreateUser = (data) => {
     const schema = Joi.object({
-        firstName: Joi.string().trim().required().messages({
+        fullNames: Joi.string().trim().required().messages({
             'string.empty': 'firstName cannot be empty.',
             'any.required': 'firstName is required.',
-        }),
-        lastName: Joi.string().trim().required().messages({
-            'string.empty': 'lastname cannot be empty.',
-            'any.required': 'lastname is required.',
         }),
         password: Joi.string().trim().min(8).required().messages({
             'string.empty': 'Password cannot be empty.',
