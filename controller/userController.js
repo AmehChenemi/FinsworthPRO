@@ -8,8 +8,6 @@ const { dynamicEmail } = require("../html");
 const bcrypt = require("bcrypt");
 const crypto = require('crypto');
  const {Email} = require("../validation/email.js");
- const nodemailer= require("nodemailer")
- require("dotenv").config()
 
 exports.createUser = async (req, res) => {
   try {
@@ -114,7 +112,7 @@ const hashedPassword = await bcrypt.hash(password, salt);
 
     // Respond with success message and user data
     res.status(201).json({
-      message: "Welcome, User created successfully",
+      message: `Welcome, ${fullName}! Your verification is complete. Please proceed to the login page.`,
       data: savedUser, token
     })}
   } catch (err) {
@@ -162,15 +160,16 @@ exports. resendOTP = async (req, res) => {
 //Function to verify a new user with an OTP
 exports. verify = async (req, res) => {
   try {
-    const id = req.body;
+    
+    const { userInput, userId } = req.body;
     //const token = req.params.token;
-    const user = await userModel.findById(id);
-    const { userInput } = req.body;
+    const user = await userModel.findById(userId);
+    console.log(user)
     // console.log(user);
-
+console.log(user && userInput === user.newCode)
     if (user && userInput === user.newCode) {
       // Update the user if verification is successful
-      await userModel.findByIdAndUpdate(id, { isVerified: true }, { new: true });
+      await userModel.findByIdAndUpdate(userId, { isVerified: true }, { new: true });
     } else {
       return res.status(400).json({
         message: "Incorrect OTP, Please check your email for the code"
@@ -209,7 +208,7 @@ exports.login = async (req, res) => {
       if (passwordMatch) {
         // Generate JWT token
         const token = jwt.sign(
-          { id: user.id, email: user.email },
+          { userId: user._id, email: user.email },
           process.env.SECRET,
           { expiresIn: '2d' }
         );
@@ -222,7 +221,7 @@ exports.login = async (req, res) => {
         });
 
         return res.json({
-          message: 'Login successful',
+          message: 'You have successfully Logged in to Finsworth PRO, feel free to explore our app',
           user: { email: user.email, firstName: user.firstName },
           token,
         });
@@ -380,3 +379,268 @@ exports.resetPassword = async (req, res) => {
 
 
 
+exports.inviteUser = async (req, res) => {
+  try {
+      // Check if req.user is defined before accessing its properties
+      const currentUserRole = req.user ? req.user.role : null;
+      if (!currentUserRole) {
+          return res.status(403).json({ error: "User role not defined." });
+      }
+
+      const { invitedUserRole, invitedEmail } = req.body; // Assuming the role and email of the user to be invited are sent in the request body
+
+      // Check if the current user's role is admin
+      if (currentUserRole === 'Director') {
+          // Invite the user with the specified role via email
+          console.log(`User with role '${currentUserRole}' is inviting a user with role '${invitedUserRole}' to email '${invitedEmail}'`);
+          
+          // Send invitation email using the Email function
+          await sendInvitationEmail(invitedEmail, invitedUserRole);
+
+          res.status(200).json({ message: "Invitation sent successfully." });
+      } else {
+          res.status(403).json({ message: "You do not have permission to invite users." });
+      }
+  } catch (error) {
+      console.error("Error:", error);
+      res.status(500).json({ error: error.message });
+  }
+};
+
+// Function to send invitation email
+async function sendInvitationEmail(email, role) {
+try {
+    const subject = "Invitation to join our platform";
+    const registrationLink = "https://yourapp.com/register"; // Replace this with your registration link
+    const html = `<p>You have been invited to join our platform as an ${role}. Please register using the following link:</p>
+                 <a href="${registrationLink}">Register Now</a>`;
+    
+    // Call the Email function to send the invitation email
+    await Email({
+        email,
+        subject,
+        html
+    });
+    
+    console.log(`Invitation email sent to ${email}`);
+} catch (error) {
+    console.error("Error sending invitation email:", error);
+    throw error; // Re-throw the error for handling in the controller
+}
+}
+
+
+
+
+exports.getAllUsers= async(req,res)=>{
+
+  const users= await userModel.find(req.params)
+
+  if(!users){
+    res.status(404).json('no users available')
+  }
+  else{
+    res.status(200).json({message:"current users", users})
+  }
+}
+
+exports.deleteUser = async (req, res) => {
+  try {
+      const { userId } = req.body;
+
+      // Check if userId is provided
+      if (!userId) {
+          return res.status(400).json({ error: 'User ID is required' });
+      }
+
+      // Find the user by ID and delete
+      const deletedUser = await userModel.findByIdAndDelete(userId);
+
+      // Check if user exists
+      if (!deletedUser) {
+          return res.status(404).json({ error: 'User not found' });
+      }
+
+      return res.status(200).json({ message: 'User deleted successfully', data: deletedUser });
+  } catch (error) {
+      console.error('Error deleting user:', error.message);
+      return res.status(500).json(error.message);
+  }
+};
+
+
+
+exports.resetPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        // Check if email is provided
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
+        }
+
+        // Generate a reset token
+        const resetToken = crypto.randomBytes(20).toString('hex');
+
+        const user = await userModel.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Set reset token and expiry in user document
+        user.resetPasswordToken = resetToken;
+        user.resetPasswordExpires = Date.now() + 3600000; // Token valid for 1 hour
+
+        // Save the updated user 
+        await user.save();
+
+        // Construct email options
+        const emailOptions = {
+            email: user.email,
+            subject: 'Password Reset Request',
+            html: `
+                <p>You are receiving this email because you (or someone else) has requested the reset of the password for your account.</p>
+                <p>Please click on the following link, or paste this into your browser to complete the process:</p>
+                <p><a href="http://${req.headers.host}/reset/${resetToken}">Reset Password</a></p>
+                <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
+            `
+        };
+
+        // Send password reset email
+        await Email(emailOptions);
+        return res.status(200).json({ message: 'Reset password email sent successfully' });
+    } catch (error) {
+        console.error('Error resetting password:', error.message);
+        return res.status(500).json(error.message);
+    }
+};
+
+
+
+
+exports.getOne = async(req,res)=>{
+  try{
+      const id = req.params.id
+  const oneUser = await userModel.find(id)
+
+  res.status(200).json({
+      messsage: `user with email ${oneUser.email} has been found`
+
+  })
+}catch(err){
+res.status(404).json(err.message)
+}
+}
+
+
+exports.forgotPassword = async (req, res) =>{
+  try{
+      //get the email form the request body
+       const {email} = req.body
+      //  check if the user with the email provided is in the database
+      const user = await userModel.findOne({email})
+      if(!user){
+          res.status(404).json({
+              message: "user with this email is not found"
+          })
+      }
+      // if the user is existing in the database, generate a token for the user
+      const token = jwt.sign({userId:user._id}, process.env.SECRET,{expiresIn:'10m'})
+      console.log(token)
+
+      const link = `${req.protocol}://${req.get('host')}/${port}/reset-password${token}${user.token}`
+      const html= dynamicEmail(link)
+      
+
+      await sendMail({
+          email:user.email,
+          subject: 'KINDLY VERIFY YOUR EMAIL TO RESET YOUR PASSWORD',
+          html
+      })
+
+      res.status(200).json({
+          message:'Mail sent successfully'
+      })
+
+  }catch(err){
+      res.status(500).json({
+          error: err.message
+      })  
+  }
+}
+
+
+
+exports.signOut = async (req, res) => {
+  try {
+    const authorizationHeader = req.headers.authorization;
+
+    if (!authorizationHeader) {
+      return res.status(401).json({
+        message: 'Missing token'
+      });
+    }
+
+    const token = authorizationHeader.split(' ')[1];
+
+    // Create a new revoked token entry and save it to the database
+    const revokedToken = new RevokedToken({
+      token: token
+    });
+
+    await revokedToken.save();
+
+    res.status(200).json({
+      message: 'User logged out successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      Error: error.message
+    });
+  }
+};
+
+/*exports.onboardUser = async(req, res)=>{
+  try {
+    const id = req.body
+    const userId = await userModel.findById(id)
+    const {firstName, lastName, email} = req.body
+
+
+    isAdmin === true
+    if (!isAdmin ) {
+      return res.status(400).json({message:'You are not allowed to perform this action'})
+    }
+    const generateRandomPassword = 
+     const user = new user.create({
+      firstName, lastName, email:email.toLowerCase()
+     })
+    
+        // Sending a verification email to the user
+        const subject = 'Kindly verify your account';
+        const link = `${req.protocol}://${req.get('host')}/updateuser/${user._id}/${user.token}`;
+        const html = dynamicMail(link, user.firstName.toUpperCase(), user.lastName.toUpperCase().slice(0, 1));
+        await sendMail({
+            email: user.email,
+            subject,
+            html
+        });
+
+    // const subject = 'Email Verification'
+    // const html = dynamicEmail(fullName, otp)
+    //   Email({
+    //     email: user.email,
+    //     html,
+    //     subject
+    //   })
+      await user.save()
+      return res.status(200).json({
+        message: "Please check your email for your login details and sign in with the password sent to your email"
+      })
+    
+  } catch (err) {
+    return res.status(500).json(err.message);
+    
+  }
+}*/
