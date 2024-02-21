@@ -15,14 +15,21 @@ const budgetSchema = new Schema({
         date: { type: Date, default: Date.now } 
     }],
     startDate: { type: Date, required: true }, 
-
-    endDate: { type: Date, required: true }   
-    
+    endDate: { type: Date, required: true },
+    approvedByDirector: {
+        type: Boolean,
+        default: false
+    },
+    budgetAmount: {
+        type: Number,
+        required: true
+    },
+    expenses: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Expense'
+    }]
 });
 
-const budgetModel= mongoose.model("Budget", budgetSchema)
+const budgetModel = mongoose.model("Budget", budgetSchema);
 
-module.exports = budgetModel
-
-
-
+module.exports = budgetModel;
