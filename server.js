@@ -9,11 +9,12 @@ app.use(fileUpload({
     limits:{fileSize:5 * 1024 * 1024}
 }))
 require("./config/config")
-const router= require("./router/router")
+const router= require("./router/userRouter")
+const budgetRouter= require("./router/budgetRouter")
 app.get("/",(req,res)=>{
 res.send('FINSWORTH')
 })
- app.use("/api/v1",router )
+ app.use("/api/v1",router,budgetRouter )
 const PORT= process.env.PORT
 app.listen(PORT,()=>{
     console.log(`Finsworth is listening on port ${PORT}`)
