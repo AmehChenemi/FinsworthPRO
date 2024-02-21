@@ -11,7 +11,7 @@ const express= require("express")
  router.post("/resetPassword", resetPassword)
  router.get('/resetPassword/:token', resetPassword)
  router.post("/invite/:id",authMiddleware,isAdmin,checkDirector, inviteUser)
- router.delete("/deleteUser",isAdmin,authMiddleware,checkDirector, deleteUser)
+ router.delete("/deleteUser",authMiddleware,checkDirector, deleteUser)
  router.get("/getAllUsers", getAllUsers)
  
  

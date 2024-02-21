@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const userModel = require("../models/userModel");
+const budgetModel = require("../models/budgetModel");
 require("dotenv").config();
 
 
@@ -65,7 +66,45 @@ const checkDirector = (req, res, next) => {
     }
   };
   
+ 
 
   
+  const requireDirectorApproval = async (req, res, next) => {
+    try {
+        // Get the user ID from the request
+        const { userId } = req.body;
 
-  module.exports={authMiddleware,isAdmin,checkDirector}
+        // Find the user in the database
+        const user = await userModel.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Check if the user is an account manager
+        if (user.role === 'Account Manager') {
+            // Account managers need approval from the director
+            const director = await userModel.findOne({ role: 'Director' });
+            if (!director) {
+                return res.status(404).json({ error: 'Director not found' });
+            }
+
+            // Check if the director has approved budgets for the account manager
+            const directorApproved = await budgetModel.exists({ user: director._id, approvedByDirector: true });
+            if (!directorApproved) {
+                req.directorApprovalRequired = true; // Set a flag indicating director approval is required
+            }
+        }
+
+        // Proceed to the next middleware
+        next();
+    } catch (error) {
+        console.error('Error checking director approval:', error);
+        return res.status(500).json(error.message);
+    }
+};
+
+
+  module.exports={authMiddleware,isAdmin,checkDirector, requireDirectorApproval}
+
+
+  

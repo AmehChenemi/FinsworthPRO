@@ -1,9 +1,12 @@
-const budgetModel= require("../models/budgetModel");
-const userModel= require("../models/userModel");
+const budgetModel = require("../models/budgetModel");
+const userModel = require("../models/userModel");
 const { DateTime } = require('luxon');
+const { requireDirectorApproval } = require("../middleware/authorization");
 
 exports.createBudget = async (req, res) => {
     try {
+        
+        // Proceed with creating the budget
         const { userId, categories, budgetType } = req.body;
 
         // Check if user is logged in
@@ -72,7 +75,6 @@ exports.createBudget = async (req, res) => {
         return res.status(500).json(error.message);
     }
 };
-
 
   
   exports.getAllBudgets= async(req,res)=>{

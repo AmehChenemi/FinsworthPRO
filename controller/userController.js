@@ -188,27 +188,38 @@ exports. verify = async (req, res) => {
 };
 
 
-exports. login = async (req, res) => {
+exports.login = async (req, res) => {
   try {
     const { email, firstName, password } = req.body;
 
-    // Check if the user exists with the provided email or Firstname
+    // Check if email or first name is provided
+    if (!email && !firstName) {
+      return res.status(400).json({ error: 'Email or first name is required' });
+    }
+
+    // Find user by email or first name
     const user = await userModel.findOne({
-      $or: [{ email}, { firstName}],
+      $or: [{ email }, { firstName }],
     });
-     //console.log(user);
 
     if (user) {
-      // If the user exists, compare the password
+      // Compare passwords
       const passwordMatch = await bcrypt.compare(password, user.password);
 
       if (passwordMatch) {
-        // If password is correct, generate and send a token
+        // Generate JWT token
         const token = jwt.sign(
           { id: user.id, email: user.email },
           process.env.SECRET,
-          { expiresIn: '120s' }
+          { expiresIn: '2d' }
         );
+
+        // Send login email
+        await Email({
+          email: user.email,
+          subject: 'Successful Login',
+          html: '<p>You have successfully logged in.</p>',
+        });
 
         return res.json({
           message: 'Login successful',

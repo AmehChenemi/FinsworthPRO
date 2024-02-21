@@ -22,7 +22,8 @@ const userSchema= new mongoose.Schema({
     },
     role:{
         type:String,
-        enum:["Director",'Account Manager', 'HR'],
+        enum:["Director",'Account Manager'],
+       
         required: true
     },
 
@@ -49,6 +50,12 @@ const userSchema= new mongoose.Schema({
             required:false
         },
     },
+    
+    // budgetApproval: {
+    //     type: Boolean,
+    //     default: false // Default value indicating director has not approved budget creation
+    // },
+
     budgets: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Budget' }]
     
 
