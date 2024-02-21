@@ -8,6 +8,7 @@ const { dynamicEmail } = require("../html");
 const bcrypt = require("bcrypt");
  const {Email} = require("../validation/email.js");
 const { isAdmin } = require("../middleware/authorization.js");
+const RevokedToken = require("../models/revokedToken.js")
 
 exports.createUser = async (req, res) => {
   try {
@@ -113,7 +114,7 @@ const hashedPassword = await bcrypt.hash(password, salt);
 
     // Respond with success message and user data
     res.status(201).json({
-      message: "Welcome, User created successfully",
+      message: `Welcome, ${fullName}! Your verification is complete. Please proceed to the login page.`,
       data: savedUser, token
     })}
   } catch (err) {
@@ -161,15 +162,16 @@ exports. resendOTP = async (req, res) => {
 //Function to verify a new user with an OTP
 exports. verify = async (req, res) => {
   try {
-    const id = req.body;
+    
+    const { userInput, userId } = req.body;
     //const token = req.params.token;
-    const user = await userModel.findById(id);
-    const { userInput } = req.body;
+    const user = await userModel.findById(userId);
+    console.log(user)
     // console.log(user);
-
+console.log(user && userInput === user.newCode)
     if (user && userInput === user.newCode) {
       // Update the user if verification is successful
-      await userModel.findByIdAndUpdate(id, { isVerified: true }, { new: true });
+      await userModel.findByIdAndUpdate(userId, { isVerified: true }, { new: true });
     } else {
       return res.status(400).json({
         message: "Incorrect OTP, Please check your email for the code"
@@ -195,7 +197,7 @@ exports. login = async (req, res) => {
     const user = await userModel.findOne({
       $or: [{ email}, { firstName}],
     });
-     //console.log(user);
+     console.log(user);
 
     if (user) {
       // If the user exists, compare the password
@@ -204,13 +206,13 @@ exports. login = async (req, res) => {
       if (passwordMatch) {
         // If password is correct, generate and send a token
         const token = jwt.sign(
-          { id: user.id, email: user.email },
+          { userId: user._id, email: user.email },
           process.env.SECRET,
           { expiresIn: '120s' }
         );
 
         return res.json({
-          message: 'Login successful',
+          message: 'You have successfully Logged in to Finsworth PRO, feel free to explore our app',
           user: { email: user.email, firstName: user.firstName },
           token,
         });
@@ -226,8 +228,88 @@ exports. login = async (req, res) => {
   }
 };
 
+exports.getOne = async(req,res)=>{
+  try{
+      const id = req.params.id
+  const oneUser = await userModel.find(id)
 
-<<<<<<< HEAD:controller/controller.js
+  res.status(200).json({
+      messsage: `user with email ${oneUser.email} has been found`
+
+  })
+}catch(err){
+res.status(404).json(err.message)
+}
+}
+
+
+exports.forgotPassword = async (req, res) =>{
+  try{
+      //get the email form the request body
+       const {email} = req.body
+      //  check if the user with the email provided is in the database
+      const user = await userModel.findOne({email})
+      if(!user){
+          res.status(404).json({
+              message: "user with this email is not found"
+          })
+      }
+      // if the user is existing in the database, generate a token for the user
+      const token = jwt.sign({userId:user._id}, process.env.SECRET,{expiresIn:'10m'})
+      console.log(token)
+
+      const link = `${req.protocol}://${req.get('host')}/${port}/reset-password${token}${user.token}`
+      const html= dynamicEmail(link)
+      
+
+      await sendMail({
+          email:user.email,
+          subject: 'KINDLY VERIFY YOUR EMAIL TO RESET YOUR PASSWORD',
+          html
+      })
+
+      res.status(200).json({
+          message:'Mail sent successfully'
+      })
+
+  }catch(err){
+      res.status(500).json({
+          error: err.message
+      })  
+  }
+}
+
+
+
+exports.signOut = async (req, res) => {
+  try {
+    const authorizationHeader = req.headers.authorization;
+
+    if (!authorizationHeader) {
+      return res.status(401).json({
+        message: 'Missing token'
+      });
+    }
+
+    const token = authorizationHeader.split(' ')[1];
+
+    // Create a new revoked token entry and save it to the database
+    const revokedToken = new RevokedToken({
+      token: token
+    });
+
+    await revokedToken.save();
+
+    res.status(200).json({
+      message: 'User logged out successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      Error: error.message
+    });
+  }
+};
+
 /*exports.onboardUser = async(req, res)=>{
   try {
     const id = req.body
@@ -271,5 +353,3 @@ exports. login = async (req, res) => {
     
   }
 }*/
-=======
->>>>>>> 8b3751faf64918dc7681c3426f71d3af7ae24085:controller/userController.js

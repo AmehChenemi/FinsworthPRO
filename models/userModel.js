@@ -62,7 +62,7 @@ const userSchema= new mongoose.Schema({
             required:false
         },
     },
-    acctOfficer: [{ type: mongoose.Schema.Types.ObjectId, ref: 'accountOfficer' }]
+    // acctOfficer: [{ type: mongoose.Schema.Types.ObjectId, ref: 'accountOfficer' }]
     // budgets: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Budget' }]
 
     

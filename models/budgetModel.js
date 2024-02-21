@@ -19,6 +19,7 @@ const budgetSchema = new Schema({
     endDate: { type: Date, required: true }   
     
 });
+
 const budgetModel= mongoose.model("Budget", budgetSchema)
 
 module.exports = budgetModel

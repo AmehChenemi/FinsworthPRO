@@ -15,8 +15,15 @@ const expenseSchema = new mongoose.Schema({
       },
       PaymentMethod:{
         type:String
-      }
+      },
+      // user:{
+      //   type:mongoose.Schema.Types.ObjectId,
+      //   ref:'User'
+      // },
+      budgetId:{
+        type:mongoose.Schema.Types.ObjectId
+      },
 },{timestamps:true})
 
-const expenses = model.mongoose('expenses', expenseSchema)
-module.exports = expenses  
+const expensesModel = model.mongoose('expenses', expenseSchema)
+module.exports = expensesModel  

@@ -1,5 +1,5 @@
-const budgetModel= require("../model/budgetModel")
-const userModel= require("../model/userModel")
+const budgetModel= require("../models/budgetModel")
+const userModel= require("../models/userModel")
 
 exports.createBudget = async (req, res) => {
     try {
