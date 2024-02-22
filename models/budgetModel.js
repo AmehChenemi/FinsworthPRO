@@ -20,10 +20,6 @@ const budgetSchema = new Schema({
         type: Boolean,
         default: false
     },
-    budgetAmount: {
-        type: Number,
-        required: true
-    },
     expenses: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Expense'

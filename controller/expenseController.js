@@ -1,5 +1,6 @@
-const expenseModel = require ('../models/expenses.js')
-const budgetModel = require ('../models/budgetModel')
+const expenseModel = require ('../models/expenseModel.js')
+const budgetModel = require ('../models/budgetModel.js')
+
 exports. createExpenses = async(req, res) =>{
     try{
        const {category, description, amount } = req.body
