@@ -25,6 +25,7 @@ exports.createUser = async (req, res) => {
 
     // Check for required fields
     if ( !fullNames|| !email || !password ||!company_Name ||!role ||!confirmPassword) {
+
       return res.status(400).json({
         message: "Missing required fields. Make sure to include Lastname, Firstname, email, and password.",
       });
@@ -37,10 +38,11 @@ exports.createUser = async (req, res) => {
         message: "This email already exists",
       });
     }
+
     if(confirmPassword !== password){
       return res.status(400).json("password does not match, kindly type it again")
     }
-
+             
     // Hash the password
 const salt = await bcrypt.genSalt(12);
 const hashedPassword = await bcrypt.hash(password, salt);
@@ -50,9 +52,7 @@ const hashedPassword = await bcrypt.hash(password, salt);
       { fullNames, email,role },
       process.env.SECRET,
       { expiresIn: "120s" }
-    );
-    
-    
+    );   
 
    // Upload profile picture to Cloudinary
     const profilePicture = req.files && req.files.profilePicture;
@@ -70,8 +70,8 @@ const hashedPassword = await bcrypt.hash(password, salt);
       return res.status(500).json({
         message: "Error uploading profile picture to Cloudinary",
       });
-    
     }
+             
     // Create a new user instance
     const newUser = new userModel({
         fullNames:fullNames.toUpperCase(),
@@ -79,21 +79,18 @@ const hashedPassword = await bcrypt.hash(password, salt);
       password: hashedPassword,
       company_Name:company_Name.toUpperCase(),
       role,
+      // confirmPassword:password,
       profilePicture: {
         public_id: fileUploader.public_id,
         url: fileUploader.secure_url
       }
     });
+             
     // Construct a consistent full name
     const fullName = `${newUser.fullNames.charAt(0).toUpperCase()}${newUser.fullNames.slice(1).toLowerCase()} ${newUser.fullNames.charAt(0).toUpperCase()}`;
     // console.log(fullName);
-
     // Save the new user to the database
     const savedUser = await newUser.save();
-
-    
-    
-
     const generateOTP = () => {
       const min = 1000;
       const max = 9999;
@@ -101,7 +98,6 @@ const hashedPassword = await bcrypt.hash(password, salt);
   }
   
   const otp = generateOTP();
-  
   const subject = "Kindly verify";
 
     savedUser.newCode = otp
@@ -255,7 +251,57 @@ exports.login = async (req, res) => {
     console.error('Error during login:', error.message);
     return res.status(500).json(error.message);
   }
-};
+
+// exports.login = async (req, res) => {
+//   try {
+//     const { email, firstName, password } = req.body;
+
+//     // Check if email or first name is provided
+//     if (!email && !firstName) {
+//       return res.status(400).json({ error: 'Email or first name is required' });
+//     }
+
+//     // Find user by email or first name
+//     const user = await userModel.findOne({
+//       $or: [{ email }, { firstName }],
+//     });
+
+//     if (user) {
+//       // Compare passwords
+//       const passwordMatch = await bcrypt.compare(password, user.password);
+
+//       if (passwordMatch) {
+//         // Generate JWT token
+//         const token = jwt.sign(
+//           { userId: user._id, email: user.email },
+//           process.env.SECRET,
+//           { expiresIn: '2d' }
+//         );
+
+//         // Send login email
+//         await Email({
+//           email: user.email,
+//           subject: 'Successful Login',
+//           html: '<p>You have successfully logged in.</p>',
+//         });
+
+//         return res.json({
+//           message: 'You have successfully Logged in to Finsworth PRO, feel free to explore our app',
+//           user: { email: user.email, firstName: user.firstName },
+//           token,
+//         });
+//       } else {
+//         return res.status(401).json({ error: 'Invalid password' });
+//       }
+//     } else {
+//       return res.status(401).json({ error: 'User not found' });
+//     }
+  
+//   } catch (error) {
+//     console.error('Error during login:', error.message);
+//     return res.status(500).json(error.message);
+//   }
+// };
 
 
 exports.inviteUser = async (req, res) => {
