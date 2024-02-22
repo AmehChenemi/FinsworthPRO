@@ -12,11 +12,7 @@ const validateCreateUser = (data) => {
             'string.min': 'Password must be at least {8} characters long.',
             'any.required': 'Password is required.',
         }),
-        // confirmPassword: Joi.string().trim().min(8).required().messages({
-        //     'string.empty': 'confirm Password cannot be empty.',
-        //     'string.min': ' confirm Password must be at least {8} characters long.',
-        //     'any.required': 'confirm Password is required.',
-        // }),
+       
         email: Joi.string().email().messages({
             'string.empty': 'email cannot be empty.',
             'string.email': 'Please enter a valid email address.',
