@@ -11,14 +11,22 @@ const crypto = require('crypto');
 
 exports.createUser = async (req, res) => {
   try {
-    const { error } = validateCreateUser(req.body);
+    const { error } = validateCreateUser({
+      fullNames: req.body.fullNames,
+      email: req.body.email,
+      password: req.body.password,
+      role: req.body.role,
+      company_Name: req.body.company_Name
+  });
+  
+    // const { error } = validateCreateUser({req.body.fullNames, req.body.email, req.body.password, req.body.role, req.body.company_Name});
             if (error) {
        return res.status(400).json(error.message);
            } else {
-    const { fullNames, email, password, company_Name, role} = req.body;
+    const { fullNames, email, password, confirmPassword, company_Name, role} = req.body;
 
     // Check for required fields
-    if ( !fullNames|| !email || !password ||!company_Name ||!role) {
+    if ( !fullNames|| !email || !password || !confirmPassword ||!company_Name ||!role) {
       return res.status(400).json({
         message: "Missing required fields. Make sure to include Lastname, Firstname, email, and password.",
       });
@@ -31,7 +39,14 @@ exports.createUser = async (req, res) => {
         message: "This email already exists",
       });
     }
-
+   
+    // matching password with confirm password
+    
+    if (confirmPassword !== password) {
+       return res.status(404).json({
+       message:"incorrect Password, kindly type in a password that match"
+       })
+    }   
     // Hash the password
 const salt = await bcrypt.genSalt(12);
 const hashedPassword = await bcrypt.hash(password, salt);
@@ -65,11 +80,12 @@ const hashedPassword = await bcrypt.hash(password, salt);
     }
     // Create a new user instance
     const newUser = new userModel({
-        fullNames,
+        fullNames:fullNames.toUpperCase(),
       email: email.toLowerCase(),
       password: hashedPassword,
-      company_Name,
+      company_Name:company_Name.toUpperCase(),
       role,
+      // confirmPassword:password,
       profilePicture: {
         public_id: fileUploader.public_id,
         url: fileUploader.secure_url
@@ -186,56 +202,93 @@ console.log(user && userInput === user.newCode)
   }
 };
 
+exports.login = async(req, res)=>{
+  try{
+      const {email, password} = req.body
+      const user = await userModel.findOne({email});
 
-exports.login = async (req, res) => {
-  try {
-    const { email, firstName, password } = req.body;
-
-    // Check if email or first name is provided
-    if (!email && !firstName) {
-      return res.status(400).json({ error: 'Email or first name is required' });
-    }
-
-    // Find user by email or first name
-    const user = await userModel.findOne({
-      $or: [{ email }, { firstName }],
-    });
-
-    if (user) {
-      // Compare passwords
-      const passwordMatch = await bcrypt.compare(password, user.password);
-
-      if (passwordMatch) {
-        // Generate JWT token
-        const token = jwt.sign(
-          { userId: user._id, email: user.email },
-          process.env.SECRET,
-          { expiresIn: '2d' }
-        );
-
-        // Send login email
-        await Email({
-          email: user.email,
-          subject: 'Successful Login',
-          html: '<p>You have successfully logged in.</p>',
-        });
-
-        return res.json({
-          message: 'You have successfully Logged in to Finsworth PRO, feel free to explore our app',
-          user: { email: user.email, firstName: user.firstName },
-          token,
-        });
-      } else {
-        return res.status(401).json({ error: 'Invalid password' });
+      if(!user){
+         return res.status(404).json({
+              message:'User not found'
+          })
       }
-    } else {
-      return res.status(401).json({ error: 'User not found' });
-    }
-  } catch (error) {
-    console.error('Error during login:', error.message);
-    return res.status(500).json(error.message);
+
+      const comparePassword = bcrypt.compareSync(password,user.password);
+
+      if(!comparePassword){
+          return res.status(400).json({
+              message:'Invalid password'
+          })
+      };
+
+      const token = jwt.sign({
+          userId: user._id,
+          email: user.email},
+          process.env.secret,{expiresIn:'1d'})
+
+          return res.status(200).json({
+              message:`Welcome ${user.fullNames} You've successfully logged in to Finsworth PRO `,
+              token
+             })
+
+      }catch(err){
+          res.status(500).json({
+           error:err.message
+          }) 
+       }
+
   }
-};
+
+// exports.login = async (req, res) => {
+//   try {
+//     const { email, firstName, password } = req.body;
+
+//     // Check if email or first name is provided
+//     if (!email && !firstName) {
+//       return res.status(400).json({ error: 'Email or first name is required' });
+//     }
+
+//     // Find user by email or first name
+//     const user = await userModel.findOne({
+//       $or: [{ email }, { firstName }],
+//     });
+
+//     if (user) {
+//       // Compare passwords
+//       const passwordMatch = await bcrypt.compare(password, user.password);
+
+//       if (passwordMatch) {
+//         // Generate JWT token
+//         const token = jwt.sign(
+//           { userId: user._id, email: user.email },
+//           process.env.SECRET,
+//           { expiresIn: '2d' }
+//         );
+
+//         // Send login email
+//         await Email({
+//           email: user.email,
+//           subject: 'Successful Login',
+//           html: '<p>You have successfully logged in.</p>',
+//         });
+
+//         return res.json({
+//           message: 'You have successfully Logged in to Finsworth PRO, feel free to explore our app',
+//           user: { email: user.email, firstName: user.firstName },
+//           token,
+//         });
+//       } else {
+//         return res.status(401).json({ error: 'Invalid password' });
+//       }
+//     } else {
+//       return res.status(401).json({ error: 'User not found' });
+//     }
+  
+//   } catch (error) {
+//     console.error('Error during login:', error.message);
+//     return res.status(500).json(error.message);
+//   }
+// };
 
 
 exports.inviteUser = async (req, res) => {

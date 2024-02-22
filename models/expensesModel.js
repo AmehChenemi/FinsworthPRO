@@ -8,14 +8,13 @@ const expenseSchema = new mongoose.Schema({
         types:String
       },
       amount:{
-        type:Strings
-      },
-      date:{
-        type:DateTime.now
-      },
-      PaymentMethod:{
         type:String
       },
+      date:{
+        type:Date,
+        default:Date.now
+      },
+     
       // user:{
       //   type:mongoose.Schema.Types.ObjectId,
       //   ref:'User'
@@ -26,5 +25,5 @@ const expenseSchema = new mongoose.Schema({
       },
 },{timestamps:true})
 
-const expensesModel = model.mongoose('expenses', expenseSchema)
+const expensesModel = mongoose.model('expenses', expenseSchema)
 module.exports = expensesModel  
