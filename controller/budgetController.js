@@ -1,24 +1,24 @@
 const budgetModel = require("../models/budgetModel");
 const userModel = require("../models/userModel");
 const { DateTime } = require('luxon');
+const expenseModel= require("../models/expenseModel")
 const { requireDirectorApproval } = require("../middleware/authorization");
+const expensesModel = require("../models/expenseModel");
+//const accountManagerModel = require("../models/accountManagerModel");
 
 exports.createBudget = async (req, res) => {
     try {
-        
-        // Proceed with creating the budget
-        const { userId, categories, budgetType } = req.body;
-
-        // Check if user is logged in
-        if (!userId) {
-            return res.status(401).json({ error: 'User must be logged in to create a budget' });
-        }
+        // Extract user ID from authentication token
+        const userId = req.user._id;
 
         // Check if user exists
         const user = await userModel.findById(userId);
         if (!user) {
             return res.status(404).json({ error: 'User not found. Please log in to perform this operation.' });
         }
+
+        // Proceed with creating the budget
+        const { categories, budgetType } = req.body;
 
         // Check if categories are provided
         if (!categories || categories.length === 0) {
@@ -53,8 +53,8 @@ exports.createBudget = async (req, res) => {
         // Create a new budget with Luxon dates
         const budget = new budgetModel({
             user: userId,
-            startDate: startDate.toJSDate(), // Convert Luxon DateTime to JavaScript Date object
-            endDate: endDate.toJSDate(), // Convert Luxon DateTime to JavaScript Date object
+            startDate: startDate.toJSDate(), 
+            endDate: endDate.toJSDate(), 
             categories: categories.map(category => ({
                 category: category.category,
                 amount: category.amount,
@@ -76,7 +76,40 @@ exports.createBudget = async (req, res) => {
     }
 };
 
-  
+exports.calculateAmountSpent = async (req, res) => {
+    try {
+        const { budgetId } = req.body;
+
+        if (!budgetId) {
+            return res.status(400).json('BudgetId is required');
+        }
+
+        const budget = await budgetModel.findById(budgetId);
+        if (!budget) {
+            return res.status(404).json('Budget not found');
+        }
+
+        const categoryNames = budget.categories.map(category => category.category);
+
+        const totalAmountSpent = await expenseModel.aggregate([
+            {
+                $match: { budgetId, category: { $in: categoryNames } }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalAmountSpent: { $sum: "$amount" }
+                }
+            }
+        ]);
+
+        return res.json({ totalAmountSpent: totalAmountSpent.length > 0 ? totalAmountSpent[0].totalAmountSpent : 0 });
+    } catch (error) {
+        console.error('Error calculating amount spent:', error);
+        return res.status(500).json(error.message);
+    }
+};
+
   exports.getAllBudgets= async(req,res)=>{
 
     const budgets= await budgetModel.find(req.params)

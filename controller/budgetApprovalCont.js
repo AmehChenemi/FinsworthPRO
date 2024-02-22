@@ -1,9 +1,6 @@
 const express= require("express")
 const budgetModel = require("../models/budgetModel");
 const userModel = require("../models/userModel");
-
-
-
 // Controller function to approve a budget
 exports.approveBudget = async (req, res) => {
     try {

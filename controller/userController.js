@@ -12,21 +12,20 @@ const crypto = require('crypto');
 exports.createUser = async (req, res) => {
   try {
     const { error } = validateCreateUser({
-      fullNames: req.body.fullNames,
-      email: req.body.email,
-      password: req.body.password,
-      role: req.body.role,
-      company_Name: req.body.company_Name
-  });
-  
-    // const { error } = validateCreateUser({req.body.fullNames, req.body.email, req.body.password, req.body.role, req.body.company_Name});
+      fullNames:req.body.fullNames,
+      email:req.body.email,
+      password:req.body.password,
+      company_Name:req.body.company_Name,
+      role:req.body.role
+    });
             if (error) {
        return res.status(400).json(error.message);
            } else {
-    const { fullNames, email, password, confirmPassword, company_Name, role} = req.body;
+    const { fullNames, email, password, company_Name, role, confirmPassword} = req.body;
 
     // Check for required fields
-    if ( !fullNames|| !email || !password || !confirmPassword ||!company_Name ||!role) {
+    if ( !fullNames|| !email || !password ||!company_Name ||!role ||!confirmPassword) {
+
       return res.status(400).json({
         message: "Missing required fields. Make sure to include Lastname, Firstname, email, and password.",
       });
@@ -39,14 +38,11 @@ exports.createUser = async (req, res) => {
         message: "This email already exists",
       });
     }
-   
-    // matching password with confirm password
-    
-    if (confirmPassword !== password) {
-       return res.status(404).json({
-       message:"incorrect Password, kindly type in a password that match"
-       })
-    }   
+
+    if(confirmPassword !== password){
+      return res.status(400).json("password does not match, kindly type it again")
+    }
+             
     // Hash the password
 const salt = await bcrypt.genSalt(12);
 const hashedPassword = await bcrypt.hash(password, salt);
@@ -56,9 +52,7 @@ const hashedPassword = await bcrypt.hash(password, salt);
       { fullNames, email,role },
       process.env.SECRET,
       { expiresIn: "120s" }
-    );
-    
-    
+    );   
 
    // Upload profile picture to Cloudinary
     const profilePicture = req.files && req.files.profilePicture;
@@ -76,8 +70,8 @@ const hashedPassword = await bcrypt.hash(password, salt);
       return res.status(500).json({
         message: "Error uploading profile picture to Cloudinary",
       });
-    
     }
+             
     // Create a new user instance
     const newUser = new userModel({
         fullNames:fullNames.toUpperCase(),
@@ -91,16 +85,12 @@ const hashedPassword = await bcrypt.hash(password, salt);
         url: fileUploader.secure_url
       }
     });
+             
     // Construct a consistent full name
     const fullName = `${newUser.fullNames.charAt(0).toUpperCase()}${newUser.fullNames.slice(1).toLowerCase()} ${newUser.fullNames.charAt(0).toUpperCase()}`;
     // console.log(fullName);
-
     // Save the new user to the database
     const savedUser = await newUser.save();
-
-    
-    
-
     const generateOTP = () => {
       const min = 1000;
       const max = 9999;
@@ -108,7 +98,6 @@ const hashedPassword = await bcrypt.hash(password, salt);
   }
   
   const otp = generateOTP();
-  
   const subject = "Kindly verify";
 
     savedUser.newCode = otp
@@ -128,7 +117,7 @@ const hashedPassword = await bcrypt.hash(password, salt);
 
     // Respond with success message and user data
     res.status(201).json({
-      message: `Welcome, ${fullName}! Your verification is complete. Please proceed to the login page.`,
+      message: `Welcome, ${fullName}! Your registration is complete. Please verify your account.`,
       data: savedUser, token
     })}
   } catch (err) {
@@ -138,33 +127,74 @@ const hashedPassword = await bcrypt.hash(password, salt);
 };
 
 
-// Function to resend the OTP incase the user didn't get the OTP
-exports. resendOTP = async (req, res) => {
+
+exports.resendOTP = async (req, res) => {
   try {
-      const id = req.params.id;
-      const user = await userModel.findById(id);
+    const id = req.body.id;
+    const user = await userModel.findById(id);
 
-      const generateOTP = () => {
-        const min = 1000;
-        const max = 9999;
-        return Math.floor(Math.random() * (max - min + 1)) + min;
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
-    const subject = 'Email Verification'
-    const otp = generateOTP();
 
-      user.newCode = otp
-      const html = dynamicEmail(fullName, otp)
-      Email({
-        email: user.email,
-        html,
-        subject
-      })
-      await user.save()
-      return res.status(200).json({
-        message: "Please check your email for the new OTP"
-      })
-      
-    
+    const generateOTP = () => {
+      const min = 1000;
+      const max = 9999;
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    const subject = 'Email Verification';
+    const otp = generateOTP();
+    user.newCode = otp;
+
+    // Retrieve user's full name from the database or another source
+    const fullName = user.fullNames;
+
+    const html = dynamicEmail(fullName, otp);
+    await Email({
+      email: user.email,
+      html,
+      subject
+    });
+
+    await user.save();
+
+    return res.status(200).json({ message: 'Please check your email for the new OTP' });
+  } catch (error) {
+    console.error('Error resending OTP:', error);
+    return res.status(500).json({ message: 'An error occurred while resending OTP' });
+  }
+};
+
+
+exports.verify = async (req, res) => {
+  try {
+    const id = req.body;
+    // console.log(id);
+    const user = await userModel.findById(id);
+// console.log(user);
+    if (!user) {
+      return res.status(400).json({
+        message: "User not found"
+      });
+    }
+
+    let { userInput } = req.body; // Retrieve userInput from req.body
+    userInput = userInput.trim(); // Trim whitespace from userInput
+
+    // Convert userInput and user.newCode to strings for comparison
+    const userInputStr = String(userInput);
+    const newCodeStr = String(user.newCode);
+
+    if (userInputStr === newCodeStr) {
+      // Update the user if verification is successful
+      await userModel.findByIdAndUpdate(id, { isVerified: true }, { new: true });
+      return res.status(200).send("You have been successfully verified. Kindly visit the login page.");
+    } else {
+      return res.status(400).json({
+        message: "Incorrect OTP, Please check your email for the code"
+      });
+    }
   } catch (err) {
     return res.status(500).json({
       message: "Internal server error: " + err.message,
@@ -173,70 +203,53 @@ exports. resendOTP = async (req, res) => {
 };
 
 
-//Function to verify a new user with an OTP
-exports. verify = async (req, res) => {
+exports.login = async (req, res) => {
   try {
-    
-    const { userInput, userId } = req.body;
-    //const token = req.params.token;
-    const user = await userModel.findById(userId);
-    console.log(user)
-    // console.log(user);
-console.log(user && userInput === user.newCode)
-    if (user && userInput === user.newCode) {
-      // Update the user if verification is successful
-      await userModel.findByIdAndUpdate(userId, { isVerified: true }, { new: true });
-    } else {
-      return res.status(400).json({
-        message: "Incorrect OTP, Please check your email for the code"
-      })
-    }
-    if (user.isVerified === true) {
-      return res.status(200).json("You have been successfully verified. Kindly visit the login page.");
+    const { email, fullNames, password } = req.body;
+
+    // Check if email or first name is provided
+    if (!email && !fullNames) {
+      return res.status(400).json({ error: 'Email or first name is required' });
     }
 
-  } catch (err) {
-      return res.status(500).json(
-         err.message
-      );
-  }
-};
+    // Find user by email or first name
+    const user = await userModel.findOne({
+      $or: [{ email }, { fullNames }],
+    });
 
-exports.login = async(req, res)=>{
-  try{
-      const {email, password} = req.body
-      const user = await userModel.findOne({email});
+    if (user) {
+      // Compare passwords
+      const passwordMatch = await bcrypt.compare(password, user.password);
 
-      if(!user){
-         return res.status(404).json({
-              message:'User not found'
-          })
+      if (passwordMatch) {
+        // Generate JWT token
+        const token = jwt.sign(
+          { userId: user._id, email },
+          process.env.SECRET,
+          { expiresIn: '2d' }
+        );
+
+        // Send login email
+        await Email({
+          email: user.email,
+          subject: 'Successful Login',
+          html: '<p>You have successfully logged in.</p>',
+        });
+
+        return res.json({
+          message: 'You have successfully Logged in to Finsworth PRO, feel free to explore our app',
+          user: { email: user.email, fullNames: user.fullNames },
+          token,
+        });
+      } else {
+        return res.status(401).json({ error: 'Invalid password' });
       }
-
-      const comparePassword = bcrypt.compareSync(password,user.password);
-
-      if(!comparePassword){
-          return res.status(400).json({
-              message:'Invalid password'
-          })
-      };
-
-      const token = jwt.sign({
-          userId: user._id,
-          email: user.email},
-          process.env.secret,{expiresIn:'1d'})
-
-          return res.status(200).json({
-              message:`Welcome ${user.fullNames} You've successfully logged in to Finsworth PRO `,
-              token
-             })
-
-      }catch(err){
-          res.status(500).json({
-           error:err.message
-          }) 
-       }
-
+    } else {
+      return res.status(401).json({ error: 'User not found' });
+    }
+  } catch (error) {
+    console.error('Error during login:', error.message);
+    return res.status(500).json(error.message);
   }
 
 // exports.login = async (req, res) => {
