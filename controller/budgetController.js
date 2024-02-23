@@ -36,7 +36,6 @@ exports.createBudget = async (req, res) => {
         } else {
             return res.status(400).json({ error: 'Invalid budget type' });
         }
-
       
         const budget = new budgetModel({
             user: userId,
