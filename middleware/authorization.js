@@ -20,9 +20,10 @@ const authMiddleware = async (req, res, next) => {
         }
 
         // Fetch user from database based on the decoded token
-        const user = await userModel.findById(decodedToken.id);
+        const user = await userModel.findById(decodedToken.userId);
+        
         if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+            return res.status(404).json({ error: 'User  cannot be found' });
         }
 
         // Populate req.user with the authenticated user's information

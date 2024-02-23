@@ -17,8 +17,8 @@ exports.createUser = async (req, res) => {
       password: req.body.password,
       role: req.body.role,
       company_Name: req.body.company_Name
-  });
-  
+    });
+
     // const { error } = validateCreateUser({req.body.fullNames, req.body.email, req.body.password, req.body.role, req.body.company_Name});
             if (error) {
        return res.status(400).json(error.message);
@@ -27,7 +27,7 @@ exports.createUser = async (req, res) => {
 
     // Check for required fields
     if ( !fullNames|| !email || !password || !confirmPassword ||!company_Name ||!role) {
-      return res.status(400).json({
+return res.status(400).json({
         message: "Missing required fields. Make sure to include Lastname, Firstname, email, and password.",
       });
     }
@@ -39,15 +39,15 @@ exports.createUser = async (req, res) => {
         message: "This email already exists",
       });
     }
-   
+
     // matching password with confirm password
     
     if (confirmPassword !== password) {
-       return res.status(404).json({
-       message:"incorrect Password, kindly type in a password that match"
-       })
-    }   
-    // Hash the password
+      return res.status(404).json({
+        message:"incorrect Password, kindly type in a password that match"
+      })
+    }
+   // Hash the password
 const salt = await bcrypt.genSalt(12);
 const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -56,11 +56,11 @@ const hashedPassword = await bcrypt.hash(password, salt);
       { fullNames, email,role },
       process.env.SECRET,
       { expiresIn: "120s" }
-    );
-    
-    
+    );   
 
-   // Upload profile picture to Cloudinary
+    
+    
+    // Upload profile picture to Cloudinary
     const profilePicture = req.files && req.files.profilePicture;
     if (!profilePicture || !profilePicture.tempFilePath) {
       return res.status(400).json({
@@ -78,7 +78,7 @@ const hashedPassword = await bcrypt.hash(password, salt);
       });
     
     }
-    // Create a new user instance
+      // Create a new user instance
     const newUser = new userModel({
         fullNames:fullNames.toUpperCase(),
       email: email.toLowerCase(),
@@ -91,15 +91,15 @@ const hashedPassword = await bcrypt.hash(password, salt);
         url: fileUploader.secure_url
       }
     });
-    // Construct a consistent full name
+      // Construct a consistent full name
     const fullName = `${newUser.fullNames.charAt(0).toUpperCase()}${newUser.fullNames.slice(1).toLowerCase()} ${newUser.fullNames.charAt(0).toUpperCase()}`;
     // console.log(fullName);
-
+    
     // Save the new user to the database
     const savedUser = await newUser.save();
 
-    
-    
+
+
 
     const generateOTP = () => {
       const min = 1000;
@@ -108,7 +108,7 @@ const hashedPassword = await bcrypt.hash(password, salt);
   }
   
   const otp = generateOTP();
-  
+
   const subject = "Kindly verify";
 
     savedUser.newCode = otp
@@ -141,32 +141,32 @@ const hashedPassword = await bcrypt.hash(password, salt);
 // Function to resend the OTP incase the user didn't get the OTP
 exports. resendOTP = async (req, res) => {
   try {
-      const id = req.params.id;
-      const user = await userModel.findById(id);
+    const id = req.params.id;
+    const user = await userModel.findById(id);
 
-      const generateOTP = () => {
-        const min = 1000;
-        const max = 9999;
-        return Math.floor(Math.random() * (max - min + 1)) + min;
+   const generateOTP = () => {
+      const min = 1000;
+      const max = 9999;
+      return Math.floor(Math.random() * (max - min + 1)) + min;
     }
     const subject = 'Email Verification'
     const otp = generateOTP();
-
-      user.newCode = otp
-      const html = dynamicEmail(fullName, otp)
-      Email({
-        email: user.email,
-        html,
-        subject
-      })
-      await user.save()
-      return res.status(200).json({
-        message: "Please check your email for the new OTP"
-      })
-      
     
+    user.newCode = otp
+    const html = dynamicEmail(fullName, otp)
+     Email({
+      email: user.email,
+      html,
+      subject
+    })
+     await user.save()
+     return res.status(200).json({ 
+      message: "Please check your email for the new OTP"
+     })
+
+
   } catch (err) {
-    return res.status(500).json({
+    return res.status(500).json({ 
       message: "Internal server error: " + err.message,
     });
   }
@@ -236,8 +236,8 @@ exports.login = async(req, res)=>{
            error:err.message
           }) 
        }
-
-  }
+     
+      }
 
 // exports.login = async (req, res) => {
 //   try {

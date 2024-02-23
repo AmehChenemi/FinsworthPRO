@@ -1,3 +1,15 @@
+
+const express= require("express")
+
+const router= express.Router()
+ 
+const{ createExpenses }= require("../controller/expenseController")
+router.post("/createExpenses", createExpenses)
+
+
+
+
+
 const express = require('express')
 const router = express.Router()
 
@@ -7,3 +19,4 @@ router.get('/get-all-expenses', getAllExpenses)
 router.get('/get-expenses', getExpenses)
 
 module.exports = router
+

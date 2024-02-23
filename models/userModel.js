@@ -41,6 +41,10 @@ const userSchema= new mongoose.Schema({
         type:String
         
     },
+    confirmPassword:{
+        type:String
+        
+    },
     profilePicture:{
         public_id:{
             type:String,

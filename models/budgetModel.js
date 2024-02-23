@@ -21,7 +21,6 @@ const budgetSchema = new Schema({
         default: false
     },
 
-
     expenses: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Expense'
