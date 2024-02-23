@@ -9,7 +9,7 @@ const expenseSchema = new mongoose.Schema({
         type: String
     },
     amount: {
-        type: String
+        type: Number
     },
     date: {
         type: Date,
@@ -23,6 +23,6 @@ const expenseSchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
-const expensesModel = mongoose.model('Expense', expenseSchema); 
+const expensesModel = mongoose.model('Expenses', expenseSchema); 
 module.exports = expensesModel;
 

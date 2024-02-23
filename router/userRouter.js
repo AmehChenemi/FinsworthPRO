@@ -1,6 +1,6 @@
 const express= require("express")
 
- const{createUser,verify,login, getAllUsers, deleteUser, resetPassword, inviteUser, resendOTP}= require('../controller/userController')
+ const{createUser,verify,login, getAllUsers, deleteUser, resetPassword, inviteUser, resendOTP, signOut, forgotPassword}= require('../controller/userController')
  
  const{authMiddleware,isAdmin,checkDirector}=require("../middleware/authorization")
 
@@ -13,6 +13,8 @@ const express= require("express")
  router.post("/invite",authMiddleware,isAdmin,checkDirector, inviteUser)
  router.delete("/deleteUser",authMiddleware,checkDirector, deleteUser)
  router.get("/getAllUsers", getAllUsers)
+ router.get("/signOut", authMiddleware,signOut)
+ router.get("/forgotPassword", forgotPassword)
  
  
 

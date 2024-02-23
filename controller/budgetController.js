@@ -3,8 +3,7 @@ const userModel = require("../models/userModel");
 const { DateTime } = require('luxon');
 const expenseModel= require("../models/expenseModel")
 const { requireDirectorApproval } = require("../middleware/authorization");
-const expensesModel = require("../models/expenseModel");
-//const accountManagerModel = require("../models/accountManagerModel");
+
 
 exports.createBudget = async (req, res) => {
     try {
@@ -17,27 +16,15 @@ exports.createBudget = async (req, res) => {
             return res.status(404).json({ error: 'User not found. Please log in to perform this operation.' });
         }
 
-        // Proceed with creating the budget
-        const { categories, budgetType } = req.body;
+        
+        const { amount, budgetType } = req.body;
 
-        // Check if categories are provided
-        if (!categories || categories.length === 0) {
-            return res.status(400).json({ error: 'At least one category is required' });
+        // Validate budget amount and type
+        if (typeof amount !== 'number' || !['monthly', 'yearly'].includes(budgetType)) {
+            return res.status(400).json({ error: 'Invalid budget amount or type' });
         }
 
-        // Validate categories
-        const validCategories = ['Food', 'Utilities', 'Travel', 'Salary', 'Other'];
-        const isValidCategories = categories.every(category =>
-            typeof category === 'object' &&
-            typeof category.category === 'string' &&
-            typeof category.amount === 'number' &&
-            validCategories.includes(category.category)
-        );
-        if (!isValidCategories) {
-            return res.status(400).json({ error: 'Invalid categories provided' });
-        }
-
-        // Set start and end dates based on budget type using Luxon
+       
         let startDate, endDate;
         const now = DateTime.local(); // Get current date and time
         if (budgetType === 'monthly') {
@@ -50,16 +37,13 @@ exports.createBudget = async (req, res) => {
             return res.status(400).json({ error: 'Invalid budget type' });
         }
 
-        // Create a new budget with Luxon dates
+      
         const budget = new budgetModel({
             user: userId,
-            startDate: startDate.toJSDate(), 
-            endDate: endDate.toJSDate(), 
-            categories: categories.map(category => ({
-                category: category.category,
-                amount: category.amount,
-                date: category.date
-            }))
+            startDate: startDate.toJSDate(),
+            endDate: endDate.toJSDate(),
+            amount,
+            budgetType
         });
 
         // Save the budget
@@ -69,12 +53,13 @@ exports.createBudget = async (req, res) => {
         user.budgets.push(savedBudget._id);
         await user.save();
 
-        return res.status(201).json({ message: 'Budget created successfully', data: savedBudget });
+        return res.status(201).json({ message: 'Fixed budget created successfully', savedBudget });
     } catch (error) {
-        console.error('Error creating budget:', error);
+        console.error('Error creating fixed budget:', error);
         return res.status(500).json(error.message);
     }
 };
+
 
 exports.calculateAmountSpent = async (req, res) => {
     try {
@@ -89,24 +74,68 @@ exports.calculateAmountSpent = async (req, res) => {
             return res.status(404).json('Budget not found');
         }
 
-        const categoryNames = budget.categories.map(category => category.category);
+        // Initialize totalAmountSpent to 0
+        let totalAmountSpent = 0;
 
-        const totalAmountSpent = await expenseModel.aggregate([
-            {
-                $match: { budgetId, category: { $in: categoryNames } }
-            },
-            {
-                $group: {
-                    _id: null,
-                    totalAmountSpent: { $sum: "$amount" }
-                }
+        // Iterate over each expense ID in the budget and sum up the amounts
+        for (const expenseId of budget.expenses) {
+            // Find the expense document by ID
+            const expense = await expenseModel.findById(expenseId);
+            if (expense) {
+                totalAmountSpent += parseFloat(expense.amount);
             }
-        ]);
+        }
 
-        return res.json({ totalAmountSpent: totalAmountSpent.length > 0 ? totalAmountSpent[0].totalAmountSpent : 0 });
+        return res.json({ totalAmountSpent });
     } catch (error) {
         console.error('Error calculating amount spent:', error);
         return res.status(500).json(error.message);
+    }
+};
+
+exports.calculateRemainingBalance = async (req, res) => {
+    try {
+        const { budgetId } = req.body;
+
+        if (!budgetId) {
+            return res.status(400).json({ error: 'BudgetId is required' });
+        }
+
+        const budget = await budgetModel.findById(budgetId);
+        console.log('Budget:', budget);
+
+        if (!budget) {
+            return res.status(404).json({ error: 'Budget not found' });
+        }
+
+        // Calculate total amount spent
+        let totalAmountSpent = 0;
+
+        for (const expenseId of budget.expenses) {
+            const expense = await expenseModel.findById(expenseId);
+            console.log('Expense:', expense);
+
+            if (expense) {
+                totalAmountSpent += parseFloat(expense.amount);
+            }
+        }
+
+        console.log('Total Amount Spent:', totalAmountSpent);
+
+        // Check if there are no expenses associated with the budget
+        if (totalAmountSpent === 0) {
+            // If no expenses, remaining balance equals the budget amount
+            return res.json({ remainingBalance: budget.amount });
+        }
+
+        // Calculate remaining balance
+        const remainingBalance = budget.amount - totalAmountSpent;
+        console.log('Remaining Balance:', remainingBalance);
+
+        return res.json({ remainingBalance });
+    } catch (error) {
+        console.error('Error calculating remaining balance:', error);
+        return res.status(500).json({ error: 'Internal Server Error' });
     }
 };
 
