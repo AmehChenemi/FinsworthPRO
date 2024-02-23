@@ -55,11 +55,6 @@ const userSchema= new mongoose.Schema({
             required:false
         },
     },
-    
-    // budgetApproval: {
-    //     type: Boolean,
-    //     default: false // Default value indicating director has not approved budget creation
-    // },
 
     budgets: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Budget' }]
     
