@@ -86,7 +86,7 @@ const hashedPassword = await bcrypt.hash(password, salt);
       }
     });
     // Construct a consistent full name
-    const fullName = `${newUser.fullNames.charAt(0).toUpperCase()}${newUser.fullNames.slice(1).toLowerCase()}}`;
+    const fullName = `${newUser.fullNames.charAt(0).toUpperCase()}${newUser.fullNames.slice(1).toLowerCase()}`;
     // console.log(fullName);
 
     // Save the new user to the database

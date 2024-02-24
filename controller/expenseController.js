@@ -52,13 +52,10 @@ exports. createExpenses = async(req, res) =>{
         })
     }
 }
-
-
-
 exports.getAllExpenses = async(req, res) => {
     try{
         //  find all the expenses from the expense database
-        const allExpenses = await expenseModel.find()
+ const allExpenses = await expenseModel.find()
         // get the length of all expenses in the database
         const totalExpenses = allExpenses.length
         // check if there is no expenses in the database
@@ -72,13 +69,14 @@ exports.getAllExpenses = async(req, res) => {
                 totalExpenses
             })
         };
-}
- catch(err){
+
+    }catch(err){
     res.status(500).json({
         error: err.message
     })
 }
 }
+
 
 exports.getExpenses = async(req, res) => {
     try{

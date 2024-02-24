@@ -5,10 +5,10 @@ const nodemailer = require("nodemailer");
 const Email=async(options)=>{
 const transporter = nodemailer.createTransport({
 
- service:process.env.service,
+//  service:process.env.service,
   auth: {
     user:process.env.user ,
-    pass:process.env.mailPassword,
+    pass:process.env.mailpassword,
   },
 });
 
