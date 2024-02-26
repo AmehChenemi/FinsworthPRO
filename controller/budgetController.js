@@ -8,7 +8,7 @@ const { requireDirectorApproval } = require("../middleware/authorization");
 exports.createBudget = async (req, res) => {
     try {
         // Extract user ID from authentication token
-        const userId = req.user._id;
+        const userId = req.userId;
 
         // Check if user exists
         const user = await userModel.findById(userId);
@@ -26,13 +26,13 @@ exports.createBudget = async (req, res) => {
 
        
         let startDate, endDate;
-        const now = DateTime.local(); // Get current date and time
+        const now = DateTime.local(); 
         if (budgetType === 'monthly') {
-            startDate = now.startOf('month'); // First day of current month
-            endDate = now.endOf('month'); // Last day of current month
+            startDate = now.startOf('month'); 
+            endDate = now.endOf('month'); 
         } else if (budgetType === 'yearly') {
-            startDate = now.startOf('year'); // First day of current year
-            endDate = now.endOf('year'); // Last day of current year
+            startDate = now.startOf('year'); 
+            endDate = now.endOf('year'); 
         } else {
             return res.status(400).json({ error: 'Invalid budget type' });
         }

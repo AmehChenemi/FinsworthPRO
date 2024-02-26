@@ -6,9 +6,14 @@ const Email=async(options)=>{
 const transporter = nodemailer.createTransport({
 
 //  service:process.env.service,
-  auth: {
-    user:process.env.user ,
-    pass:process.env.mailpassword,
+host: 'smtp.gmail.com',
+service : "gmail" ,
+port: 587,
+secure:false,
+
+auth:{
+  user:process.env.user,
+  pass:process.env.mailpassword
   },
 });
 

@@ -21,13 +21,14 @@ const authMiddleware = async (req, res, next) => {
 
         // Fetch user from database based on the decoded token
         const user = await userModel.findById(decodedToken.userId);
-        
+        // console.log(user)
         if (!user) {
             return res.status(404).json({ error: 'User  cannot be found' });
         }
 
         // Populate req.user with the authenticated user's information
-        req.user = user;
+        req.user = decodedToken;
+        // console.log(req.user)
 
         // Call next middleware
         next();
@@ -38,27 +39,27 @@ const authMiddleware = async (req, res, next) => {
 };
 
 
-const isAdmin = async (req, res, next) => {
-    try {
-        const user = req.user;
+// const isAdmin = async (req, res, next) => {
+//     try {
+//         const user = req.user;
 
-        // Check if the role is explicitly set to "Admin" or if it's not set (defaults to "User")
-        if (!user || user.role !== "Director") {
-            return res.status(403).json({ error: 'You are not authorized to perform this action' });
-        }
+//         // Check if the role is explicitly set to "Admin" or if it's not set (defaults to "User")
+//         if (!user || user.role !== 'Director') {
+//             return res.status(403).json({ error: 'You are not authorized to perform this action' });
+//         }
 
-        next();
-    } catch (error) {
-      return  res.status(500).json({ error: error.message });
-    }
-};
+//         next();
+//     } catch (error) {
+//       return  res.status(500).json({ error: error.message });
+//     }
+// };
 
 
 const checkDirector = (req, res, next) => {
-    const { role } = req.user; // Assuming req.user contains the user's role
+    // const { role } = req.user; // Assuming req.user contains the user's role
     
     // Check if the user is the director
-    if (role === 'Director') {
+    if (req.user.role === 'Director') {
       // User is the director, proceed to the next middleware
       next();
     } else {
@@ -105,7 +106,7 @@ const checkDirector = (req, res, next) => {
 };
 
 
-  module.exports={authMiddleware,isAdmin,checkDirector, requireDirectorApproval}
+  module.exports={authMiddleware,checkDirector, requireDirectorApproval}
 
 
   

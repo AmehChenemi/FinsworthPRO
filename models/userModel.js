@@ -23,11 +23,14 @@ const userSchema= new mongoose.Schema({
     },
     role:{
         type:String,
-        enum:["Director",'Account Manager'],
+        enum:['Director','Account Manager'],
        
-        required: true
+        // required: true
     },
-
+   userId:{
+    type:String,
+    require:true
+   },
     userInput:{
         type:String
     },

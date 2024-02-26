@@ -1,7 +1,7 @@
 const express= require("express")
 
 const {createBudget, getAllBudgets, deleteBudget, calculateAmountSpent, calculateRemainingBalance }=require('../controller/budgetController')
-const{authMiddleware,isAdmin,checkDirector,requireDirectorApproval}=require("../middleware/authorization")
+const{authMiddleware,checkDirector,requireDirectorApproval}=require("../middleware/authorization")
 const router= express.Router()
 
 router.post("/createBudget",authMiddleware,createBudget )
@@ -12,6 +12,6 @@ router.post("/createBudget",authMiddleware,createBudget )
 
  router.get("/budgetBalance", calculateRemainingBalance)
  
- router.delete("/deletebudget",authMiddleware,isAdmin,checkDirector, deleteBudget)
+ router.delete("/deletebudget",authMiddleware,checkDirector, deleteBudget)
 
  module.exports= router

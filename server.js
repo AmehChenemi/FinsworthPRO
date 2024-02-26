@@ -19,7 +19,7 @@ const accountManagerRouter= require("./router/accountManagerRouter")
  app.use("/api",router,budgetRouter,budgetApproval ,expenseRouter,accountManagerRouter)
 
 app.get("/",(req,res)=>{
-res.send('FINSWORTH')
+res.send('WELCOME TO FINSWORTH, WHERE EXPENSE TRACKING IS MADE EASY')
 })
  
 const PORT= process.env.PORT

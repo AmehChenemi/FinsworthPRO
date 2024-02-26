@@ -17,18 +17,17 @@ exports.createUser = async (req, res) => {
       email: req.body.email,
       password: req.body.password,
       company_Name:req.body.company_Name,
-      role:req.body.role
+      // role:req.body.role
     });
             if (error) {
        return res.status(400).json(error.message);
            } else {
-    const { fullNames, email, password, confirmPassword, company_Name, role} = req.body;
+    const { fullNames, email, password, confirmPassword, company_Name} = req.body;
 
     // Check for required fields
-    if ( !fullNames|| !email || !password ||!company_Name ||!role ||!confirmPassword) {
+    if ( !fullNames|| !email || !password ||!company_Name  ||!confirmPassword) {
       return res.status(400).json({
-        message: "Missing required fields. Make sure to include Lastname, Firstname, email, and password.",
-      });
+        message: "Missing required fields."});
     }
 
     // Check if the email already exists
@@ -46,13 +45,7 @@ exports.createUser = async (req, res) => {
 const salt = await bcrypt.genSalt(12);
 const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Generate a JWT token
-    const token = jwt.sign(
-      { fullNames, email,role },
-      process.env.SECRET,
-      { expiresIn: "120s" }
-    );
-    
+   
     
 
    // Upload profile picture to Cloudinary
@@ -74,19 +67,32 @@ const hashedPassword = await bcrypt.hash(password, salt);
     
     }
     // Create a new user instance
-    const newUser = new userModel({
-        fullNames:fullNames.toUpperCase(),
+      const newUser = new userModel({                                        
+      fullNames:fullNames.toUpperCase(),
       email: email.toLowerCase(),
       password: hashedPassword,
       company_Name:company_Name.toUpperCase(),
-      role,
+     role : 'Director',      
       profilePicture: {
         public_id: fileUploader.public_id,
         url: fileUploader.secure_url
       }
     });
+
+    newUser.userId = newUser._id
+    await newUser.save()
+
+    // const role = 'Director'
+    
+     // Generate a JWT token
+     const token = jwt.sign(
+      { fullNames, email,userId:newUser._id, role:newUser.role,},
+      process.env.SECRET,
+      { expiresIn: "1800s" }
+    );
+    
     // Construct a consistent full name
-    const fullName = `${newUser.fullNames.charAt(0).toUpperCase()}${newUser.fullNames.slice(1).toLowerCase()}`;
+    // const fullName = `${newUser.fullNames.charAt(0).toUpperCase()}${newUser.fullNames.slice(1).toLowerCase()}`;
     // console.log(fullName);
 
     // Save the new user to the database
@@ -106,7 +112,7 @@ const hashedPassword = await bcrypt.hash(password, salt);
   const subject = "Kindly verify";
 
     savedUser.newCode = otp
-    const html = dynamicEmail(fullName, otp)
+    const html = dynamicEmail(newUser.fullNames, otp)
 
    
     Email({
@@ -122,8 +128,10 @@ const hashedPassword = await bcrypt.hash(password, salt);
 
     // Respond with success message and user data
     res.status(201).json({
-      message: `Welcome, ${fullName}! Your verification is complete. Please proceed to the login page.`,
-      data: savedUser, token
+      message: `Welcome, ${newUser.fullNames}! Your verification is complete. Please proceed to the login page.`,
+      data: savedUser,
+      role: newUser.role,
+      token: token
     })}
   } catch (err) {
     console.error("Error:", err);
@@ -174,11 +182,12 @@ exports. resendOTP = async (req, res) => {
 
 exports.verify = async (req, res) => {
   try {
-    // const {userInput} = req.body; // Remove this line
-    let userInput = req.body.userInput.trim(); // Trim whitespace from userInput
+    const userId  = req.user.userId; 
+    
+    let userInput = req.body.userInput.trim(); 
 
-    const { id } = req.body; // Destructure id directly from req.body
-    const user = await userModel.findById(id);
+    
+    const user = await userModel.findById(userId);
 
     if (!user) {
       return res.status(400).json({
@@ -192,8 +201,8 @@ exports.verify = async (req, res) => {
 
     if (userInputStr === newCodeStr) {
       // Update the user if verification is successful
-      await userModel.findByIdAndUpdate(id, { isVerified: true }, { new: true });
-      return res.status(200).send("You have been successfully verified. Kindly visit the login page.");
+      await userModel.findByIdAndUpdate(userId, { isVerified: true }, { new: true });
+      return res.status(200).json({Message:"You have been successfully verified. Kindly visit the login page."});
     } else {
       return res.status(400).json({
         message: "Incorrect OTP, Please check your email for the code"
@@ -207,7 +216,7 @@ exports.verify = async (req, res) => {
 };
 
 
-//Function to verify a new user with an OTP
+
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -261,8 +270,10 @@ exports.login = async (req, res) => {
 
 exports.inviteUser = async (req, res) => {
   try {
+  
     // Check if req.user is defined before accessing its properties
     const currentUserRole = req.user ? req.user.role : null;
+    console.log('currentuserrole:',currentUserRole)
     if (!currentUserRole) {
       return res.status(403).json({ error: "User role not defined." });
     }
