@@ -1,5 +1,5 @@
 const budgetModel = require("../models/budgetModel");
-const userModel = require("../models/company");
+const companyModel = require("../models/company.js");
 const { DateTime } = require('luxon');
 const expenseModel= require("../models/expenseModel")
 const { requireDirectorApproval } = require("../middleware/authorization");
@@ -11,7 +11,7 @@ exports.createBudget = async (req, res) => {
         const userId = req.user._id;
 
         // Check if user exists
-        const user = await userModel.findById(userId);
+        const user = await companyModel.findById(userId);
         if (!user) {
             return res.status(404).json({ error: 'User not found. Please log in to perform this operation.' });
         }

@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const { validateCreateUser, validateLogin } = require('../validation/validation');
 const cloudinary = require("../middleware/cloudinary");
 const { dynamicEmail } = require("../html");
+const {dynamicMail} = require('../invitationemail.js')
 const bcrypt = require("bcrypt");
 const crypto = require('crypto');
  const {Email} = require("../validation/email.js");
@@ -299,6 +300,7 @@ console.log(company)
     return res.status(500).json(error.message);
   }
 }
+
 
 
 // exports.inviteUser = async (req, res) => {
