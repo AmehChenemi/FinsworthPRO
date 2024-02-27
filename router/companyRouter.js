@@ -6,7 +6,7 @@ const express= require("express")
 
  const router= express.Router()
  router.post('/createUser',createUser)
- router.post("/verify/:userId", authMiddleware, verify)
+ router.post("/verify", authMiddleware, verify)
  router.post("/resendOtp", resendOTP)
  router.post('/login', login)
  router.post("/resetPassword", resetPassword)

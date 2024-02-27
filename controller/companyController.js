@@ -50,7 +50,6 @@ const generateCode = () => {
   const max = 9999;
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-
    // Upload profile picture to Cloudinary
     const profilePicture = req.files && req.files.profilePicture;
     if (!profilePicture || !profilePicture.tempFilePath) {
@@ -184,7 +183,7 @@ exports. resendOTP = async (req, res) => {
 exports.verify = async (req, res) => {
   try {
     // const userId  = req.user.userId; 
-    const userId  = req.params.userId; 
+    const userId  = req.user._id; 
 
     
     let userInput = req.body.userInput.trim(); 
@@ -280,6 +279,8 @@ console.log(company)
         return res.status(400).json({message: "User not found"})
       }
       
+        
+      const code = generateCode();
       const subject = `Invitation from ${company.company_Name}` ;
     const registrationLink = "https://yourapp.com/register"; // Replace this with your registration link
     const html = `<p>You have been invited to join your company as an ${invitedUserRole}. Please sign up using the link below:</p>

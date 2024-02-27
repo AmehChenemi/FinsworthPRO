@@ -8,7 +8,7 @@ const { requireDirectorApproval } = require("../middleware/authorization");
 exports.createBudget = async (req, res) => {
     try {
         // Extract user ID from authentication token
-        const userId = req.userId;
+        const userId = req.user._id;
 
         // Check if user exists
         const user = await userModel.findById(userId);
