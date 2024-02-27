@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const userModel = require("../models/userModel");
+const companyModel = require("../models/company");
 const budgetModel = require("../models/budgetModel");
 require("dotenv").config();
 
@@ -20,14 +20,16 @@ const authMiddleware = async (req, res, next) => {
         }
 
         // Fetch user from database based on the decoded token
-        const user = await userModel.findById(decodedToken.userId);
+        const user = await companyModel.findById(decodedToken.userId);
         // console.log(user)
         if (!user) {
             return res.status(404).json({ error: 'User  cannot be found' });
         }
 
+
+
         // Populate req.user with the authenticated user's information
-        req.user = decodedToken;
+        req.user = user;
         // console.log(req.user)
 
         // Call next middleware
@@ -39,20 +41,20 @@ const authMiddleware = async (req, res, next) => {
 };
 
 
-// const isAdmin = async (req, res, next) => {
-//     try {
-//         const user = req.user;
+const isAdmin = async (req, res, next) => {
+    try {
+        const user = req.user;
 
-//         // Check if the role is explicitly set to "Admin" or if it's not set (defaults to "User")
-//         if (!user || user.role !== 'Director') {
-//             return res.status(403).json({ error: 'You are not authorized to perform this action' });
-//         }
+        // Check if the role is explicitly set to "Admin" or if it's not set (defaults to "User")
+        if (!user || user.role !== 'Director') {
+            return res.status(403).json({ error: 'You are not authorized to perform this action' });
+        }
 
-//         next();
-//     } catch (error) {
-//       return  res.status(500).json({ error: error.message });
-//     }
-// };
+        next();
+    } catch (error) {
+      return  res.status(500).json({ error: error.message });
+    }
+};
 
 
 const checkDirector = (req, res, next) => {
@@ -64,6 +66,7 @@ const checkDirector = (req, res, next) => {
       next();
     } else {
       // User is not the director, send forbidden error
+      console.log(req.user)
       res.status(403).json({ error: 'Forbidden. Only the director can perform this action.' });
     }
   };
@@ -77,7 +80,7 @@ const checkDirector = (req, res, next) => {
         const { userId } = req.body;
 
         // Find the user in the database
-        const user = await userModel.findById(userId);
+        const user = await companyModel.findById(userId);
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -85,7 +88,7 @@ const checkDirector = (req, res, next) => {
         // Check if the user is an account manager
         if (user.role === 'Account Manager') {
             // Account managers need approval from the director
-            const director = await userModel.findOne({ role: 'Director' });
+            const director = await companyModel.findOne({ role: 'Director' });
             if (!director) {
                 return res.status(404).json({ error: 'Director not found' });
             }
@@ -106,7 +109,7 @@ const checkDirector = (req, res, next) => {
 };
 
 
-  module.exports={authMiddleware,checkDirector, requireDirectorApproval}
+  module.exports={authMiddleware,checkDirector, isAdmin, requireDirectorApproval}
 
 
   

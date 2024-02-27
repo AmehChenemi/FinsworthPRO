@@ -1,5 +1,5 @@
 const budgetModel = require("../models/budgetModel");
-const userModel = require("../models/userModel");
+const userModel = require("../models/company");
 const { DateTime } = require('luxon');
 const expenseModel= require("../models/expenseModel")
 const { requireDirectorApproval } = require("../middleware/authorization");

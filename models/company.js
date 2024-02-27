@@ -1,10 +1,10 @@
 const mongoose= require("mongoose")
 
-const userSchema= new mongoose.Schema({
-    fullNames:{
-        type:String,
-        required:true
-    },
+const companySchema= new mongoose.Schema({
+    // fullNames:{
+    //     type:String,
+    //     required:true
+    // },
     email:{
         type:String,
         required:true
@@ -21,11 +21,8 @@ const userSchema= new mongoose.Schema({
     newCode:{
         type:String
     },
-    role:{
-        type:String,
-        enum:['Director','Account Manager'],
-       
-        // required: true
+    company_code:{
+        type:Number,       
     },
    userId:{
     type:String,
@@ -48,6 +45,10 @@ const userSchema= new mongoose.Schema({
         type:String
         
     },
+    role:{
+        type:String,
+        Default:'CEO'
+    },
     profilePicture:{
         public_id:{
             type:String,
@@ -59,12 +60,13 @@ const userSchema= new mongoose.Schema({
         },
     },
 
-    budgets: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Budget' }]
-    
+    budgets: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Budget' }],
+        
+    accountManager:[{ type: mongoose.Schema.Types.ObjectId, ref: 'Account Manager' }],
 
 },{timestamps:true})
 
 
-  const userModel= mongoose.model("User",userSchema)
+  const companyModel= mongoose.model("Company",companySchema)
 
-  module.exports= userModel
+  module.exports= companyModel

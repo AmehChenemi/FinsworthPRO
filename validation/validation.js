@@ -2,11 +2,6 @@ const Joi = require("@hapi/joi");
 
 const validateCreateUser = (data) => {
     const schema = Joi.object({
-        fullNames: Joi.string().trim().required().pattern(new RegExp('^[a-zA-Z]+(?:[\\s-][a-zA-Z]+)*$')).messages({
-            'string.empty': 'Full names cannot be empty.',
-            'any.required': 'Full names is required.',
-            'string.pattern.base': 'Full names must contain only letters, spaces, and hyphens.'
-        }),
         password: Joi.string().trim().required().min(8).pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*])[A-Za-z\\d!@#$%^&*]{8,}$')).messages({
             'string.empty': 'Password cannot be empty.',
             'string.min': 'Password must be at least {8} characters long.',

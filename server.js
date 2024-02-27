@@ -9,14 +9,13 @@ app.use(fileUpload({
     limits:{fileSize:5 * 1024 * 1024}
 }))
 require("./config/config")
-const router= require("./router/userRouter")
+const companyRouter= require("./router/companyRouter")
 const budgetRouter= require("./router/budgetRouter")
 const budgetApproval= require("./router/budgetApprovalRouter")
 const expenseRouter= require("./router/expenseRouter")
-
 const accountManagerRouter= require("./router/accountManagerRouter")
 // app.use("/api",router,budgetRouter,budgetApproval,expenseRouter )
- app.use("/api",router,budgetRouter,budgetApproval ,expenseRouter,accountManagerRouter)
+ app.use("/api",companyRouter,budgetRouter,budgetApproval ,expenseRouter,accountManagerRouter)
 
 app.get("/",(req,res)=>{
 res.send('WELCOME TO FINSWORTH, WHERE EXPENSE TRACKING IS MADE EASY')

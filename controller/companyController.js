@@ -1,5 +1,5 @@
 const express= require("express")
-const userModel= require("../models/userModel")
+const companyModel= require("../models/company.js")
 const { gentoken } = require('../jwt');
 const jwt = require("jsonwebtoken");
 const { validateCreateUser, validateLogin } = require('../validation/validation');
@@ -13,7 +13,6 @@ const crypto = require('crypto');
 exports.createUser = async (req, res) => {
   try {
     const { error } = validateCreateUser({
-      fullNames: req.body.fullNames,
       email: req.body.email,
       password: req.body.password,
       company_Name:req.body.company_Name,
@@ -22,16 +21,16 @@ exports.createUser = async (req, res) => {
             if (error) {
        return res.status(400).json(error.message);
            } else {
-    const { fullNames, email, password, confirmPassword, company_Name} = req.body;
+    const { email, password, confirmPassword, company_Name} = req.body;
 
     // Check for required fields
-    if ( !fullNames|| !email || !password ||!company_Name  ||!confirmPassword) {
+    if (!email || !password ||!company_Name  ||!confirmPassword) {
       return res.status(400).json({
         message: "Missing required fields."});
     }
 
     // Check if the email already exists
-    const emailExist = await userModel.findOne({ email: email.toLowerCase() });
+    const emailExist = await companyModel.findOne({ email: email.toLowerCase() });
     if (emailExist) {
       return res.status(400).json({
         message: "This email already exists",
@@ -46,7 +45,11 @@ const salt = await bcrypt.genSalt(12);
 const hashedPassword = await bcrypt.hash(password, salt);
 
    
-    
+const generateCode = () => {
+  const min = 1000;
+  const max = 9999;
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
    // Upload profile picture to Cloudinary
     const profilePicture = req.files && req.files.profilePicture;
@@ -67,33 +70,30 @@ const hashedPassword = await bcrypt.hash(password, salt);
     
     }
     // Create a new user instance
-      const newUser = new userModel({                                        
-      fullNames:fullNames.toUpperCase(),
+      const newUser = new companyModel({                                        
       email: email.toLowerCase(),
       password: hashedPassword,
       company_Name:company_Name.toUpperCase(),
-     role : 'Director',      
+     role : 'Director', 
+     company_code:generateCode(),     
       profilePicture: {
         public_id: fileUploader.public_id,
         url: fileUploader.secure_url
       }
     });
 
-    newUser.userId = newUser._id
-    await newUser.save()
-
     // const role = 'Director'
     
      // Generate a JWT token
      const token = jwt.sign(
-      { fullNames, email,userId:newUser._id, role:newUser.role,},
+      {  email,userId:newUser._id, role:newUser.role,},
       process.env.SECRET,
       { expiresIn: "1800s" }
     );
     
     // Construct a consistent full name
-    // const fullName = `${newUser.fullNames.charAt(0).toUpperCase()}${newUser.fullNames.slice(1).toLowerCase()}`;
-    // console.log(fullName);
+    // const companyName = `${newUser.company_Name.charAt(0).toUpperCase()}${newUser.company_Name.slice(1).toLowerCase()}`;
+    // console.log(companyName);
 
     // Save the new user to the database
     const savedUser = await newUser.save();
@@ -112,7 +112,7 @@ const hashedPassword = await bcrypt.hash(password, salt);
   const subject = "Kindly verify";
 
     savedUser.newCode = otp
-    const html = dynamicEmail(newUser.fullNames, otp)
+    const html = dynamicEmail(newUser.company_Name, otp)
 
    
     Email({
@@ -128,9 +128,10 @@ const hashedPassword = await bcrypt.hash(password, salt);
 
     // Respond with success message and user data
     res.status(201).json({
-      message: `Welcome, ${newUser.fullNames}! Your verification is complete. Please proceed to the login page.`,
+      message: `Welcome, ${newUser.company_Name}! Your verification is complete. Please proceed to the login page.`,
       data: savedUser,
-      role: newUser.role,
+      // role: newUser.role,
+      companyCode:newUser.company_code,
       token: token
     })}
   } catch (err) {
@@ -144,7 +145,7 @@ const hashedPassword = await bcrypt.hash(password, salt);
 exports. resendOTP = async (req, res) => {
   try {
     const id = req.params.id;
-    const user = await userModel.findById(id);
+    const user = await companyModel.findById(id);
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -161,9 +162,9 @@ exports. resendOTP = async (req, res) => {
     user.newCode = otp;
    
     // Retrieve user's full name from the database or another source
-    const fullName = user.fullNames;
+    const companyName = user.company_Name;
     
-    const html = dynamicEmail(fullName, otp)
+    const html = dynamicEmail(companyName, otp)
      Email({
       email: user.email,
       html,
@@ -182,12 +183,14 @@ exports. resendOTP = async (req, res) => {
 
 exports.verify = async (req, res) => {
   try {
-    const userId  = req.user.userId; 
+    // const userId  = req.user.userId; 
+    const userId  = req.params.userId; 
+
     
     let userInput = req.body.userInput.trim(); 
 
     
-    const user = await userModel.findById(userId);
+    const user = await companyModel.findById(userId);
 
     if (!user) {
       return res.status(400).json({
@@ -201,7 +204,7 @@ exports.verify = async (req, res) => {
 
     if (userInputStr === newCodeStr) {
       // Update the user if verification is successful
-      await userModel.findByIdAndUpdate(userId, { isVerified: true }, { new: true });
+      await companyModel.findByIdAndUpdate(userId, { isVerified: true }, { new: true });
       return res.status(200).json({Message:"You have been successfully verified. Kindly visit the login page."});
     } else {
       return res.status(400).json({
@@ -223,19 +226,23 @@ exports.login = async (req, res) => {
 
     // Check if email or first name is provided
     if (!email && !password) {
-      return res.status(400).json({ error: 'Email or first name is required' });
+      return res.status(400).json({ error: 'Email is required' });
     }
 
     // Find user by email or first name
-    const user = await userModel.findOne({
+    const user = await companyModel.findOne({
         email 
     });
 
-    if (user) {
+    if (!user) {
+      res.status(404).json({Message:" User not found"})
+    }
       // Compare passwords
       const passwordMatch = await bcrypt.compare(password, user.password);
-
-      if (passwordMatch) {
+      if (!passwordMatch) {
+        return res.status(401).json({ error: 'Invalid password' });
+      }
+   
         // Generate JWT token
         const token = jwt.sign(
           { userId: user._id, email },
@@ -252,73 +259,108 @@ exports.login = async (req, res) => {
 
         return res.json({
           message: 'Welcome back to FinsworthPRO',
-          user: { email: user.email, fullNames: user.fullNames },
+          user: { email: user.email, company_Name: user.company_Name },
           token,
         });
-      } else {
-        return res.status(401).json({ error: 'Invalid password' });
-      }
-    } else {
-      return res.status(401).json({ error: 'User not found' });
-    }
+      
   } catch (error) {
     console.error('Error during login:', error.message);
     return res.status(500).json(error.message);
   }
 }
 
-
-exports.inviteUser = async (req, res) => {
-  try {
-  
-    // Check if req.user is defined before accessing its properties
-    const currentUserRole = req.user ? req.user.role : null;
-    console.log('currentuserrole:',currentUserRole)
-    if (!currentUserRole) {
-      return res.status(403).json({ error: "User role not defined." });
-    }
-
-    const { invitedUserRole, invitedEmail } = req.body; // Assuming the role and email of the user to be invited are sent in the request body
-
-    // Check if the current user's role is admin
-    if (currentUserRole === 'Director') {
-      // Invite the user with the specified role via email
-      console.log(`User with role '${currentUserRole}' is inviting a user with role '${invitedUserRole}' to email '${invitedEmail}'`);
-
-      // Send invitation email using the Email function
-      await sendInvitationEmail(invitedEmail, invitedUserRole);
-
-      res.status(200).json({ message: "Invitation sent successfully." });
-    } else {
-      res.status(403).json({ message: "You do not have permission to invite users." });
-    }
-  } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// Function to send invitation email
-async function sendInvitationEmail(email, role) {
-  try {
-    const subject = "Invitation to join our platform";
+exports.inviteUser = async (req, res)=>{
+  try{
+      const  userId = req.user._id
+      const {invitedEmail, invitedUserRole} = req.body
+console.log(req.user)
+const company = await companyModel.findById(userId)
+console.log(company)
+      if(!company){
+        return res.status(400).json({message: "User not found"})
+      }
+      
+      const subject = `Invitation from ${company.company_Name}` ;
     const registrationLink = "https://yourapp.com/register"; // Replace this with your registration link
-    const html = `<p>You have been invited to join our platform as an ${role}. Please register using the following link:</p>
-                 <a href="${registrationLink}">Register Now</a>`;
+    const html = `<p>You have been invited to join your company as an ${invitedUserRole}. Please sign up using the link below:</p>
+                 <a href=${registrationLink}>Register Now with the code ${company.company_code}</a>`;
 
     // Call the Email function to send the invitation email
     await Email({
-      email,
+      email : invitedEmail,
       subject,
       html
     });
-
-    console.log(`Invitation email sent to ${email}`);
-  } catch (error) {
-    console.error("Error sending invitation email:", error);
-    throw error; // Re-throw the error for handling in the controller
+   res.status(200).json({Message:"Invitation sent successfully"})
+   console.log(`an email has been sent to ${invitedEmail} from ${company.company_Name}`)
+  }catch(error){
+    // console.error('Error during login:', error.message);
+    return res.status(500).json(error.message);
   }
 }
+
+
+// exports.inviteUser = async (req, res) => {
+//   try {
+//   // console.log('welcome')
+//   //   // Check if req.user is defined before accessing its properties
+//   //   const currentUserRole = req.user ? req.user.role : null;
+//   //   console.log('currentuserrole:',currentUserRole)
+//   //   if (!currentUserRole) {
+//   //     return res.status(403).json({ error: "User role not defined." });
+//   //   }
+//     const id = req.user.userId
+
+//     const admin = await companyModel.findById(id)
+//     // console.log(admin)
+//     if(!admin){
+//       return res.status(404).json({
+//         message:"user not found"
+//       })
+//     }
+
+//     const { invitedUserRole, invitedEmail } = req.body; // Assuming the role and email of the user to be invited are sent in the request body
+
+//     // Check if the current user's role is admin
+//     if (currentUserRole === 'Director') {
+//       // Invite the user with the specified role via email
+//       // console.log(`User with role '${currentUserRole}' is inviting a user with role '${invitedUserRole}' to email '${invitedEmail}'`);
+
+//       // Send invitation email using the Email function
+//       await sendInvitationEmail(invitedEmail, invitedUserRole);
+
+//       res.status(200).json({ message: "Invitation sent successfully." });
+//     } else {
+//       res.status(403).json({ message: "You do not have permission to invite users." });
+//       console.log(req.user)
+//     }
+//   } catch (error) {
+//     console.error("Error:", error);
+//     res.status(500).json({ error: error.message });
+//   }
+// };
+
+// // Function to send invitation email
+// async function sendInvitationEmail(email, invitedUserRole) {
+//   try {
+//     const subject = "Invitation to join our platform";
+//     const registrationLink = "https://yourapp.com/register"; // Replace this with your registration link
+//     const html = `<p>You have been invited to join our platform as an ${invitedUserRole}. Please register using the following link:</p>
+//                  <a href=${registrationLink}>Register Now</a>`;
+
+//     // Call the Email function to send the invitation email
+//     await Email({
+//       email,
+//       subject,
+//       html
+//     });
+
+//     console.log(`Invitation email sent to ${email}`);
+//   } catch (error) {
+//     console.error("Error sending invitation email:", error);
+//     throw error; // Re-throw the error for handling in the controller
+//   }
+// }
 
 
 
@@ -326,7 +368,7 @@ async function sendInvitationEmail(email, role) {
 exports.getAllUsers = async (req, res) => {
   try {
     // Find all users
-    const users = await userModel.find();
+    const users = await companyModel.find();
 
     // Check if any users are found
     if (!users || users.length === 0) {
@@ -351,7 +393,7 @@ exports.deleteUser = async (req, res) => {
     }
 
     // Find the user by ID and delete
-    const deletedUser = await userModel.findByIdAndDelete(userId);
+    const deletedUser = await companyModel.findByIdAndDelete(userId);
 
     // Check if user exists
     if (!deletedUser) {
@@ -379,7 +421,7 @@ exports.resetPassword = async (req, res) => {
     // Generate a reset token
     const resetToken = crypto.randomBytes(20).toString('hex');
 
-    const user = await userModel.findOne({ email });
+    const user = await companyModel.findOne({ email });
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -416,7 +458,7 @@ exports.resetPassword = async (req, res) => {
 exports.getOne = async (req, res) => {
   try {
     const id = req.params.id
-    const oneUser = await userModel.find(id)
+    const oneUser = await companyModel.find(id)
 
     res.status(200).json({
       messsage: `user with email ${oneUser.email} has been found`
@@ -432,7 +474,7 @@ exports.forgotPassword = async (req, res) => {
     //get the email form the request body
     const { email } = req.body
     //  check if the user with the email provided is in the database
-    const user = await userModel.findOne({ email })
+    const user = await companyModel.findOne({ email })
     if (!user) {
       res.status(404).json({
         message: "user with this email is not found"
@@ -466,7 +508,7 @@ exports.forgotPassword = async (req, res) => {
    exports.signOut = async (req, res) => {
   try{
       const userId = req.user.id;
-      const user = await userModel.findById(userId);
+      const user = await companyModel.findById(userId);
 
       const token = req.headers.authorization.split(' ')[1]
 

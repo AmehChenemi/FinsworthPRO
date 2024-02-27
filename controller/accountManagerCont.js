@@ -1,25 +1,34 @@
-const userModel= require("../models/userModel")
+const accountManagerModel= require("../models/accountManager.js")
+const companyModel = require("../models/company.js")
 const bcrypt= require('bcrypt')
 const jwt = require('jsonwebtoken')
 require('dotenv')
 const {Email}= require("../validation/email")
+const validation = require("../validation/acctManagervalidation.js")
 
 
 exports.accountManagerSignup = async (req, res) => {
     try {
-        const { fullNames, email, password, confirmPassword, company_Name} = req.body;
+        const { fullNames, email, password, confirmPassword, company_Name, companyCode} = req.body;
 
            // Check for required fields
-    if ( !fullNames|| !email || !password ||!confirmPassword ||!company_Name  ||!confirmPassword) {
+    if ( !fullNames|| !email || !password ||!confirmPassword ||!company_Name  ||!confirmPassword ||!companyCode) {
         return res.status(400).json({
           message: "Missing required fields."});
       }
 
         // Check if the email already exists
-        const existingUser = await userModel.findOne({ email });
+        const existingUser = await accountManagerModel.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ message: 'Email already exists' });
         }
+
+        const code = await companyModel.findOne({company_code:companyCode})
+        if(!code) {
+            return res.status(404).json({message:"Invalid company's code"})
+        }
+
+        const role = 'Account Manager'
 
      if(confirmPassword !== password){
       return res.status(400).json("password does not match, kindly type it again")
@@ -29,17 +38,20 @@ exports.accountManagerSignup = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Create a new user
-        const newUser = new userModel({
+        const newUser = new accountManagerModel({
             fullNames,
             email,
-            company_Name,
-            role:'Account Manager',
-            password: hashedPassword
+            company:code._id,
+            role,
+            password: hashedPassword,
+            company_Name
         
         });
 
         // Save the user to the database
         await newUser.save();
+
+        code.accountManager.push(newUser._id)
 
         // Generate JWT token
         const token = jwt.sign({ userId: newUser._id }, process.env.SECRET, { expiresIn: '60mins' });
@@ -47,12 +59,12 @@ exports.accountManagerSignup = async (req, res) => {
         // Send welcome email
         await Email({
             email: newUser.email,
-            subject: 'Welcome to Our Platform',
-            html: `<p>Dear ${newUser.fullName}, welcome to our platform!</p>`
+            subject: 'Welcome!!',
+            html: `<p>Dear ${newUser.fullNames}, welcome onboard, your account has been created successfully!</p>`
         });
 
         // Respond with success message and token
-        return res.status(201).json({ message: 'User created successfully', token });
+        return res.status(201).json({ message: 'User created successfully', newUser, role,token });
 
     } catch (error) {
         console.error('Error during signup:', error.message);
@@ -66,7 +78,7 @@ exports.accountManagerlogin = async (req, res) => {
         const { email, password } = req.body;
         
         // Check if the user exists with the provided email
-        const user = await userModel.findOne({ email });
+        const user = await accountManagerModel.findOne({ email });
         
         if (!user) {
             return res.status(404).json({ message: 'This email does not exist' });
@@ -83,7 +95,7 @@ exports.accountManagerlogin = async (req, res) => {
         const token = jwt.sign({ userId: user._id }, process.env.SECRET, { expiresIn: '60mins' });
         
      // Find the director user
-      const Director = await userModel.findOne({ role: 'Director' });
+      const Director = await companyModel.findOne({ role: 'Director' });
 
            if (!Director) {
                return res.status(404).json({ message: 'Director not found' });
