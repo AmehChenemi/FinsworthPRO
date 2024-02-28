@@ -50,10 +50,12 @@ const validateCreateUser = (req, res, next) => {
 
 const accountManager = (req,res,next) => {
     const validateAcctManager = Joi.object({
-        fullNames: Joi.string().trim().required().pattern(new RegExp('^[a-zA-Z]+(?:[\\s-][a-zA-Z]+)*$')).messages({
-            'string.empty': 'FullNames cannot be empty.',
-            'any.required': 'FullNames is required.',
-            'string.pattern.base': 'FullNames must contain only letters, spaces, and hyphens.'
+        fullNames: Joi.string().trim().required().pattern(new RegExp('[A-Za-z]+(?:[\\s-][a-zA-Z]+)*$'))
+        .messages({
+          'string.base': 'Full name must be a string.',
+          'string.empty': 'Full name cannot be empty.',
+          'string.pattern.base': 'Full name must contain only letters, spaces, hyphen.',
+          'any.required': 'Full name is required.',
         }),
         password: Joi.string().trim().required().min(8).pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*])[A-Za-z\\d!@#$%^&*]{8,}$')).messages({
             'string.empty': 'Password cannot be empty.',

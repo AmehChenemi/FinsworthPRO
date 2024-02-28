@@ -6,7 +6,7 @@ const router= express.Router()
 
 router.post("/createBudget",authMiddleware,createBudget )
  
- router.get("/getAllBudgets", getAllBudgets)
+//  router.get("/getAllBudgets", getAllBudgets)
 
  router.get("/amountSpent", calculateAmountSpent)
 
@@ -14,6 +14,6 @@ router.post("/createBudget",authMiddleware,createBudget )
 
  router.put("/updateBudget", updateBudget)
  
- router.delete("/deletebudget",authMiddleware,checkDirector, deleteBudget)
+//  router.delete("/deletebudget",authMiddleware,checkDirector, deleteBudget)
 
  module.exports= router

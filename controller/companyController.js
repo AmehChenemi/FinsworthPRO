@@ -42,7 +42,7 @@ const generateCode = () => {
   const max = 9999;
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-console.log(generateCode)
+// console.log(generateCode)
  const  code = generateCode();
    // Upload profile picture to Cloudinary
     const profilePicture = req.files && req.files.profilePicture;

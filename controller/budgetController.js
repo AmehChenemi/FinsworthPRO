@@ -7,9 +7,11 @@ const { requireDirectorApproval } = require("../middleware/authorization");
 
 exports.createBudget = async (req, res) => {
     try {
+        if (!req.user) {
+            return res.status(401).json({ error: 'Unauthorized. Please log in to perform this operation.' });
+        }
         // Extract user ID from authentication token
         const userId = req.user._id;
-
         // Check if user exists
         const user = await companyModel.findById(userId);
         if (!user) {
@@ -58,7 +60,6 @@ exports.createBudget = async (req, res) => {
         return res.status(500).json(error.message);
     }
 };
-
 
 exports.calculateAmountSpent = async (req, res) => {
     try {
@@ -135,42 +136,6 @@ exports.calculateRemainingBalance = async (req, res) => {
     } catch (error) {
         console.error('Error calculating remaining balance:', error);
         return res.status(500).json({ error: 'Internal Server Error' });
-    }
-};
-
-  exports.getAllBudgets= async(req,res)=>{
-
-    const budgets= await budgetModel.find(req.params)
-  
-    if(!budgets){
-      res.status(404).json('no users available')
-    }
-    else{
-      res.status(200).json({message:"current budgets", budgets})
-    }
-  }
-
-  exports.deleteBudget = async (req, res) => {
-    try {
-        const { budgetId } = req.body;
-
-        // Check if budgetId is provided
-        if (!budgetId) {
-            return res.status(400).json({ error: 'Budget ID is required' });
-        }
-
-        // Find the budget by ID and delete
-        const deletedBudget = await budgetModel.findByIdAndDelete(budgetId);
-
-        // Check if budget exists
-        if (!deletedBudget) {
-            return res.status(404).json({ error: 'Budget not found' });
-        }
-
-        return res.status(200).json({ message: 'Budget deleted successfully', data: deletedBudget });
-    } catch (error) {
-        console.error('Error deleting budget:', error.message);
-        return res.status(500).json(error.message);
     }
 };
 
