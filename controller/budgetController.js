@@ -173,3 +173,29 @@ exports.calculateRemainingBalance = async (req, res) => {
         return res.status(500).json(error.message);
     }
 };
+
+exports.updateBudget = async(req,res) => {
+    try{
+      const budgetId = req.params.id
+      console.log(req.user)
+      const user = await budgetModel.findById(userId)
+      console.log(user)
+      if(!user) {
+        return res.status(404).json({message:"User not found"})
+      }
+      const data={
+  budgetType: req.body.budgetType,
+  amount:req.body.amount
+      }
+  
+      const updates = await companyModel.findByIdAndUpdate(userId, {data:true}, {new:true})
+      if(updates){
+        return res.status(200).json({message:"Budget details has been edited successfully"},updates, user)
+      }
+  
+     } catch(error){
+      console.error('error editing Budget details:', error)
+      res.json({error:error.message})
+    }
+  }
+  

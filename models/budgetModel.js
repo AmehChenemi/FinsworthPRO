@@ -9,12 +9,13 @@ const budgetSchema = new Schema({
         ref: 'User', 
         required: true
     },
-    // },
-    // categories: [{
-    //     category: { type: String, required: true, enum: validCategories },
-    //     amount: { type: Number, default: 0 },
-    //     date: { type: Date, default: Date.now } 
-    // }],
+    amount: {
+        type:Number,
+        default:0
+    } ,
+    budgetType:{
+        type:String
+    },
     startDate: { type: Date, required: true }, 
     endDate: { type: Date, required: true },
 

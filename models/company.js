@@ -37,17 +37,17 @@ const companySchema= new mongoose.Schema({
         default:false
     },
     
-    token:{
-        type:String
+    // token:{
+    //     type:String
         
-    },
-    confirmPassword:{
-        type:String
+    // },
+    // confirmPassword:{
+    //     type:String
         
-    },
+    // },
     role:{
         type:String,
-        Default:'CEO'
+        Default:'Director'
     },
     profilePicture:{
         public_id:{

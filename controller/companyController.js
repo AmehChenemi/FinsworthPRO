@@ -2,7 +2,7 @@ const express= require("express")
 const companyModel= require("../models/company.js")
 const { gentoken } = require('../jwt');
 const jwt = require("jsonwebtoken");
-const { validateCreateUser, validateLogin } = require('../validation/validation');
+// const { validateCreateUser, validateLogin } = require('../validation/validation');
 const cloudinary = require("../middleware/cloudinary");
 const { dynamicEmail } = require("../html");
 const {dynamicMail} = require('../invitationemail.js')
@@ -11,17 +11,8 @@ const crypto = require('crypto');
  const {Email} = require("../validation/email.js");
  const revokedToken= require("../models/revokedToken")
 
-exports.createUser = async (req, res) => {
+const createUser = async (req, res) => {
   try {
-    const { error } = validateCreateUser({
-      email: req.body.email,
-      password: req.body.password,
-      company_Name:req.body.company_Name,
-      // role:req.body.role
-    });
-            if (error) {
-       return res.status(400).json(error.message);
-           } else {
     const { email, password, confirmPassword, company_Name} = req.body;
 
     // Check for required fields
@@ -51,6 +42,8 @@ const generateCode = () => {
   const max = 9999;
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+console.log(generateCode)
+ const  code = generateCode();
    // Upload profile picture to Cloudinary
     const profilePicture = req.files && req.files.profilePicture;
     if (!profilePicture || !profilePicture.tempFilePath) {
@@ -75,14 +68,14 @@ const generateCode = () => {
       password: hashedPassword,
       company_Name:company_Name.toUpperCase(),
      role : 'Director', 
-     company_code:generateCode(),     
+     company_code:code,     
       profilePicture: {
         public_id: fileUploader.public_id,
         url: fileUploader.secure_url
       }
     });
 
-    // const role = 'Director'
+//     // const role = 'Director'
     
      // Generate a JWT token
      const token = jwt.sign(
@@ -91,9 +84,9 @@ const generateCode = () => {
       { expiresIn: "1800s" }
     );
     
-    // Construct a consistent full name
-    // const companyName = `${newUser.company_Name.charAt(0).toUpperCase()}${newUser.company_Name.slice(1).toLowerCase()}`;
-    // console.log(companyName);
+//     // Construct a consistent full name
+//     // const companyName = `${newUser.company_Name.charAt(0).toUpperCase()}${newUser.company_Name.slice(1).toLowerCase()}`;
+//     // console.log(companyName);
 
     // Save the new user to the database
     const savedUser = await newUser.save();
@@ -133,16 +126,17 @@ const generateCode = () => {
       // role: newUser.role,
       companyCode:newUser.company_code,
       token: token
-    })}
-  } catch (err) {
+    })
+  }catch (err) {
     console.error("Error:", err);
     res.status(500).json({ error: err.message });
-  }
+  
+}
 };
 
 
 // Function to resend the OTP incase the user didn't get the OTP
-exports. resendOTP = async (req, res) => {
+const resendOTP = async (req, res) => {
   try {
     const id = req.params.id;
     const user = await companyModel.findById(id);
@@ -181,194 +175,8 @@ exports. resendOTP = async (req, res) => {
 };
 
 
-exports.verify = async (req, res) => {
-  try {
-    // const userId  = req.user.userId; 
-    const userId  = req.user._id; 
 
-    
-    let userInput = req.body.userInput.trim(); 
-
-    
-    const user = await companyModel.findById(userId);
-
-    if (!user) {
-      return res.status(400).json({
-        message: "User not found"
-      });
-    }
-
-    // Convert userInput and user.newCode to strings for comparison
-    const userInputStr = String(userInput);
-    const newCodeStr = String(user.newCode);
-
-    if (userInputStr === newCodeStr) {
-      // Update the user if verification is successful
-      await companyModel.findByIdAndUpdate(userId, { isVerified: true }, { new: true });
-      return res.status(200).json({Message:"You have been successfully verified. Kindly visit the login page."});
-    } else {
-      return res.status(400).json({
-        message: "Incorrect OTP, Please check your email for the code"
-      });
-    }
-  } catch (err) {
-    return res.status(500).json({ 
-      message: "Internal server error: " + err.message,
-    });
-  }
-};
-
-
-
-exports.login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    // Check if email or first name is provided
-    if (!email && !password) {
-      return res.status(400).json({ error: 'Email is required' });
-    }
-
-    // Find user by email or first name
-    const user = await companyModel.findOne({
-        email 
-    });
-
-    if (!user) {
-      res.status(404).json({Message:" User not found"})
-    }
-      // Compare passwords
-      const passwordMatch = await bcrypt.compare(password, user.password);
-      if (!passwordMatch) {
-        return res.status(401).json({ error: 'Invalid password' });
-      }
-   
-        // Generate JWT token
-        const token = jwt.sign(
-          { userId: user._id, email },
-          process.env.SECRET,
-          { expiresIn: '2d' }
-        );
-
-        // Send login email
-        await Email({
-          email: user.email,
-          subject: 'Successful Login',
-          html: '<p>You have successfully logged in.</p>',
-        });
-
-        return res.json({
-          message: 'Welcome back to FinsworthPRO',
-          user: { email: user.email, company_Name: user.company_Name },
-          token,
-        });
-      
-  } catch (error) {
-    console.error('Error during login:', error.message);
-    return res.status(500).json(error.message);
-  }
-}
-
-exports.inviteUser = async (req, res)=>{
-  try{
-      const  userId = req.user._id
-      const {invitedEmail, invitedUserRole} = req.body
-console.log(req.user)
-const company = await companyModel.findById(userId)
-console.log(company)
-      if(!company){
-        return res.status(400).json({message: "User not found"})
-      }
-      
-        
-      const code = generateCode();
-      const subject = `Invitation from ${company.company_Name}` ;
-    const registrationLink = "https://yourapp.com/register"; // Replace this with your registration link
-    const html = `<p>You have been invited to join your company as an ${invitedUserRole}. Please sign up using the link below:</p>
-                 <a href=${registrationLink}>Register Now with the code ${company.company_code}</a>`;
-
-    // Call the Email function to send the invitation email
-    await Email({
-      email : invitedEmail,
-      subject,
-      html
-    });
-   res.status(200).json({Message:"Invitation sent successfully"})
-   console.log(`an email has been sent to ${invitedEmail} from ${company.company_Name}`)
-  }catch(error){
-    // console.error('Error during login:', error.message);
-    return res.status(500).json(error.message);
-  }
-}
-
-
-
-// exports.inviteUser = async (req, res) => {
-//   try {
-//   // console.log('welcome')
-//   //   // Check if req.user is defined before accessing its properties
-//   //   const currentUserRole = req.user ? req.user.role : null;
-//   //   console.log('currentuserrole:',currentUserRole)
-//   //   if (!currentUserRole) {
-//   //     return res.status(403).json({ error: "User role not defined." });
-//   //   }
-//     const id = req.user.userId
-
-//     const admin = await companyModel.findById(id)
-//     // console.log(admin)
-//     if(!admin){
-//       return res.status(404).json({
-//         message:"user not found"
-//       })
-//     }
-
-//     const { invitedUserRole, invitedEmail } = req.body; // Assuming the role and email of the user to be invited are sent in the request body
-
-//     // Check if the current user's role is admin
-//     if (currentUserRole === 'Director') {
-//       // Invite the user with the specified role via email
-//       // console.log(`User with role '${currentUserRole}' is inviting a user with role '${invitedUserRole}' to email '${invitedEmail}'`);
-
-//       // Send invitation email using the Email function
-//       await sendInvitationEmail(invitedEmail, invitedUserRole);
-
-//       res.status(200).json({ message: "Invitation sent successfully." });
-//     } else {
-//       res.status(403).json({ message: "You do not have permission to invite users." });
-//       console.log(req.user)
-//     }
-//   } catch (error) {
-//     console.error("Error:", error);
-//     res.status(500).json({ error: error.message });
-//   }
-// };
-
-// // Function to send invitation email
-// async function sendInvitationEmail(email, invitedUserRole) {
-//   try {
-//     const subject = "Invitation to join our platform";
-//     const registrationLink = "https://yourapp.com/register"; // Replace this with your registration link
-//     const html = `<p>You have been invited to join our platform as an ${invitedUserRole}. Please register using the following link:</p>
-//                  <a href=${registrationLink}>Register Now</a>`;
-
-//     // Call the Email function to send the invitation email
-//     await Email({
-//       email,
-//       subject,
-//       html
-//     });
-
-//     console.log(`Invitation email sent to ${email}`);
-//   } catch (error) {
-//     console.error("Error sending invitation email:", error);
-//     throw error; // Re-throw the error for handling in the controller
-//   }
-// }
-
-
-
-
-exports.getAllUsers = async (req, res) => {
+const getAllUsers = async (req, res) => {
   try {
     // Find all users
     const users = await companyModel.find();
@@ -386,7 +194,7 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
-exports.deleteUser = async (req, res) => {
+const deleteUser = async (req, res) => {
   try {
     const { userId } = req.body;
 
@@ -412,7 +220,7 @@ exports.deleteUser = async (req, res) => {
 
 
 
-exports.resetPassword = async (req, res) => {
+const resetPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -472,7 +280,181 @@ exports.getOne = async (req, res) => {
   }
 }
 
-exports.forgotPassword = async (req, res) => {
+
+
+exports.updateUser = async(req,res) => {
+  try{
+    const userId = req.user._id
+    console.log(req.user)
+    const user = await companyModel.findById(userId)
+    console.log(user)
+    if(!user) {
+      return res.status(404).json({message:"User not found"})
+    }
+    const data={
+company_Name: req.body.company_Name
+    }
+
+    const updates = await companyModel.findByIdAndUpdate(userId, {data:true}, {new:true})
+    if(updates){
+      return res.status(200).json({message:"User details has been edited successfully"},updates, user)
+    }
+
+   } catch(error){
+    console.error('error editing user details:', error)
+    res.json({error:error.message})
+  }
+}
+
+
+
+const verifyUser = async(req, res) => {
+  try {
+    // const userId  = req.user.userId; 
+    const userId  = req.user._id; 
+
+    
+    let userInput = req.body.userInput.trim(); 
+
+    
+    const user = await companyModel.findById(userId);
+
+    if (!user) {
+      return res.status(400).json({
+        message: "User not found"
+      });
+    }
+
+    // Convert userInput and user.newCode to strings for comparison
+    const userInputStr = String(userInput);
+    const newCodeStr = String(user.newCode);
+
+    if (userInputStr === newCodeStr) {
+      // Update the user if verification is successful
+      await companyModel.findByIdAndUpdate(userId, { isVerified: true }, { new: true });
+      return res.status(200).json({Message:"You have been successfully verified. Kindly visit the login page."});
+    } else {
+      return res.status(400).json({
+        message: "Incorrect OTP, Please check your email for the code"
+      });
+    }
+  }catch(err){
+    return res.status(500).json({ 
+      message: "Internal server error: " + err.message,
+    });
+  }
+};
+
+
+const updateUser = async(req,res) => {
+  try{
+    const userId = req.user._id
+    console.log(req.user)
+    const user = await companyModel.findById(userId)
+    console.log(user)
+    if(!user) {
+      return res.status(404).json({message:"User not found"})
+    }
+    const data={
+company_Name: req.body.company_Name
+    }
+
+    const updates = await companyModel.findByIdAndUpdate(userId, {data:true}, {new:true})
+    if(updates){
+      return res.status(200).json({message:"User details has been edited successfully"},updates, user)
+    }
+
+   } catch(error){
+    console.error('error editing user details:', error)
+    res.json({error:error.message})
+  }
+};
+
+
+const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Check if email or first name is provided
+    if (!email && !password) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    // Find user by email or first name
+    const user = await companyModel.findOne({
+        email 
+    });
+
+    if (!user) {
+      res.status(404).json({Message:" User not found"})
+    }
+      // Compare passwords
+      const passwordMatch = await bcrypt.compare(password, user.password);
+      if (!passwordMatch) {
+        return res.status(401).json({ error: 'Invalid password' });
+      }
+   
+        // Generate JWT token
+        const token = jwt.sign(
+          { userId: user._id, email },
+          process.env.SECRET,
+          { expiresIn: '2d' }
+        );
+
+        // Send login email
+        await Email({
+          email: user.email,
+          subject: 'Successful Login',
+          html: '<p>You have successfully logged in.</p>',
+        });
+
+        return res.json({
+          message: 'Welcome back to FinsworthPRO',
+          user: { email: user.email, company_Name: user.company_Name },
+          token,
+        });
+      
+  } catch (error) {
+    console.error('Error during login:', error.message);
+    return res.status(500).json(error.message);
+  }
+};
+
+
+const inviteUser = async (req, res)=>{
+  try{
+      const  userId = req.user._id
+      const {invitedEmail, invitedUserRole} = req.body
+console.log(req.user)
+const company = await companyModel.findById(userId)
+console.log(company)
+      if(!company){
+        return res.status(400).json({message: "User not found"})
+      }
+      
+        
+    
+      const subject = `Invitation from ${company.company_Name}` ;
+    const registrationLink = "https://yourapp.com/register"; // Replace this with your registration link
+    const html = `<p>You have been invited to join your company as an ${invitedUserRole}. Please sign up using the link below:</p>
+                 <a href=${registrationLink}>Register Now with the code ${company.company_code}</a>`;
+
+    // Call the Email function to send the invitation email
+    await Email({
+      email : invitedEmail,
+      subject,
+      html
+    });
+   res.status(200).json({Message:"Invitation sent successfully"})
+   console.log(`an email has been sent to ${invitedEmail} from ${company.company_Name}`)
+  }catch(error){
+    console.error('Error during invitation:', error.message);
+    return res.status(500).json(error.message);
+  }
+};
+
+
+const forgotPassword = async (req, res) => {
   try {
     //get the email form the request body
     const { email } = req.body
@@ -506,9 +488,12 @@ exports.forgotPassword = async (req, res) => {
       error: err.message
     })
   }
-}
+};
+
+
+
   
-   exports.signOut = async (req, res) => {
+const signout = async (req, res) => {
   try{
       const userId = req.user.id;
       const user = await companyModel.findById(userId);
@@ -535,4 +520,20 @@ exports.forgotPassword = async (req, res) => {
           message: err.message
       })
   }
+}
+
+
+
+module.exports = {
+  verifyUser,
+  login,
+  inviteUser,
+  forgotPassword,
+  updateUser,
+  resendOTP,
+  resetPassword,
+  getAllUsers,
+  deleteUser,
+  createUser,
+  signout
 }

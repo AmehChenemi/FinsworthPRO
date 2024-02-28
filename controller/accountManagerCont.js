@@ -4,11 +4,18 @@ const bcrypt= require('bcrypt')
 const jwt = require('jsonwebtoken')
 require('dotenv')
 const {Email}= require("../validation/email")
-const validation = require("../validation/acctManagervalidation.js")
+// const { validateCreateUser } = require('../validation/acctManagervalidation');
 
 
 exports.accountManagerSignup = async (req, res) => {
     try {
+        // const {error} = async (req,res) =>{
+        //     fullNames:req.body.fullNames,
+        //     password:req.body.fullNames,
+        //     email:req.body.fullNames,
+        //     password:req.body.fullNames,
+
+        // }
         const { fullNames, email, password, confirmPassword, company_Name, companyCode} = req.body;
 
            // Check for required fields
@@ -116,3 +123,30 @@ exports.accountManagerlogin = async (req, res) => {
         return res.status(500).json({ error: `Internal server error ${err.message}` });
     }
 };
+
+
+exports.updateUser = async(req,res) => {
+    try{
+      const userId = req.user._id
+      console.log(req.user)
+      const user = await accountManagerModel.findById(userId)
+      console.log(user)
+      if(!user) {
+        return res.status(404).json({message:"User not found"})
+      }
+      const data={
+  fullNames: req.body.fullNames
+
+      }
+  
+      const updates = await companyModel.findByIdAndUpdate(userId, {data:true}, {new:true})
+      if(updates){
+        return res.status(200).json({message:"User details has been edited successfully"},updates, user)
+      }
+  
+     } catch(error){
+      console.error('error editing user details:', error)
+      res.json({error:error.message})
+    }
+  }
+  
