@@ -15,10 +15,10 @@ const accountSchema= new mongoose.Schema({
         type:String,
         required:true
     },
-    company_Name:{
-        type:String,
-        required:true 
-    },
+    // company_Name:{
+    //     type:String,
+    //     required:true 
+    // },
     isVerified:{
         type:Boolean,
         default:false

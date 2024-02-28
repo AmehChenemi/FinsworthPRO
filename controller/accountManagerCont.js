@@ -16,10 +16,10 @@ exports.accountManagerSignup = async (req, res) => {
         //     password:req.body.fullNames,
 
         // }
-        const { fullNames, email, password, confirmPassword, company_Name, companyCode} = req.body;
+        const { fullNames, email, password, confirmPassword, companyCode} = req.body;
 
            // Check for required fields
-    if ( !fullNames|| !email || !password ||!confirmPassword ||!company_Name  ||!confirmPassword ||!companyCode) {
+    if ( !fullNames|| !email || !password ||!confirmPassword  ||!confirmPassword ||!companyCode) {
         return res.status(400).json({
           message: "Missing required fields."});
       }
@@ -36,8 +36,9 @@ exports.accountManagerSignup = async (req, res) => {
         }
 
         const role = 'Account Manager'
-
-     if(confirmPassword !== password){
+        const companyName = code.company_Name
+    
+        if(confirmPassword !== password){
       return res.status(400).json("password does not match, kindly type it again")
     }
 
@@ -51,7 +52,7 @@ exports.accountManagerSignup = async (req, res) => {
             company:code._id,
             role,
             password: hashedPassword,
-            company_Name
+            companyName
         
         });
 

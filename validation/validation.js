@@ -13,10 +13,14 @@ const validateCreateUser = (req, res, next) => {
             'string.email': 'Please enter a valid email address.',
             'any.required': 'Email is required.',
         }),
-        company_Name: Joi.string().trim().required().messages({
-            'string.empty': 'Company name cannot be empty.',
-            'any.required': 'Company name is required.',
+        company_Name: Joi.string().trim().required().pattern(new RegExp('[A-Za-z]+(?:[\\s-][a-zA-Z]+)*$'))
+        .messages({
+          'string.base': 'Company name must be a string.',
+          'string.empty': 'Company name cannot be empty.',
+          'string.pattern.base': 'Company name must contain only letters, spaces, hyphen.',
+          'any.required': 'Company name is required.',
         }),
+        
         // role: Joi.string().trim().allow('').messages({
         //     'string.empty': 'Role cannot be empty.',
         // })
@@ -47,9 +51,9 @@ const validateCreateUser = (req, res, next) => {
 const accountManager = (req,res,next) => {
     const validateAcctManager = Joi.object({
         fullNames: Joi.string().trim().required().pattern(new RegExp('^[a-zA-Z]+(?:[\\s-][a-zA-Z]+)*$')).messages({
-            'string.empty': 'Full names cannot be empty.',
-            'any.required': 'Full names is required.',
-            'string.pattern.base': 'Full names must contain only letters, spaces, and hyphens.'
+            'string.empty': 'FullNames cannot be empty.',
+            'any.required': 'FullNames is required.',
+            'string.pattern.base': 'FullNames must contain only letters, spaces, and hyphens.'
         }),
         password: Joi.string().trim().required().min(8).pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*])[A-Za-z\\d!@#$%^&*]{8,}$')).messages({
             'string.empty': 'Password cannot be empty.',
@@ -62,10 +66,13 @@ const accountManager = (req,res,next) => {
             'string.email': 'Please enter a valid email address.',
             'any.required': 'Email is required.',
         }),
-        company_Name: Joi.string().trim().required().messages({
-            'string.empty': 'Company name cannot be empty.',
-            'any.required': 'Company name is required.',
-        }),
+        // company_Name: Joi.string().trim().required().pattern(new RegExp('[A-Za-z]')).messages({
+            // 'string.empty': 'Company name cannot be empty.',
+            // 'string.base': 'Company name must be string.',
+            // 'string.pattern.base': 'Company name must contain at least one letter.',
+            
+            // 'any.required': 'Company name is required.',
+        // }),
         // role: Joi.string().trim().allow('').messages({
         //     'string.empty': 'Role cannot be empty.',
         // })

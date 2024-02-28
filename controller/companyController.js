@@ -382,7 +382,7 @@ const login = async (req, res) => {
 
     // Find user by email or first name
     const user = await companyModel.findOne({
-        email 
+        email:email.toLowerCase() 
     });
 
     if (!user) {
