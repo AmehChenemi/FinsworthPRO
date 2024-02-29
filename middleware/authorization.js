@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const companyModel = require("../models/company");
 const budgetModel = require("../models/budgetModel");
 require("dotenv").config();
+const {checkBudget} = require("../controller/budgetController.js");
 
 
 const authMiddleware = async (req, res, next) => {

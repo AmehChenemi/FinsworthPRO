@@ -66,7 +66,7 @@ exports.getAllExpenses = async(req, res) => {
         else{
             res.status(200).json({
                 message:`There are ${totalExpenses} expenditure(s) made from this budget`,
-                totalExpenses
+                allExpenses,totalExpenses
             })
         };
 
