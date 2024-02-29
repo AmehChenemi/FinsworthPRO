@@ -55,7 +55,7 @@ exports. createExpenses = async(req, res) =>{
 exports.getAllExpenses = async(req, res) => {
     try{
         //  find all the expenses from the expense database
- const allExpenses = await expenseModel.find().populate("Budget")
+ const allExpenses = await expenseModel.find().populate("budgetId")
         // get the length of all expenses in the database
         const totalExpenses = allExpenses.length
         // check if there is no expenses in the database
@@ -83,7 +83,7 @@ exports.getExpenses = async(req, res) => {
         // get the expense id from the req body
         const {id} = req.body
         // check if the id is existing in the database and populate the budget 
-        const oneExpenses = await expenseModel.findById(id).populate("Budget")
+        const oneExpenses = await expenseModel.findById(id).populate("budgetId")
         if(!oneExpenses){ 
             return res.status(404).json({message: "There are no expenses recorded for this budget "})
         }

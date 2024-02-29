@@ -5,7 +5,7 @@ const date = datetime.toFormat("yyyy-MM-dd");
 const time = datetime.toFormat("HH:mm:ss");
 
 const expenseSchema = new mongoose.Schema({
-    category: {
+     category: {
         type: String
     },
     description: {
@@ -26,7 +26,8 @@ const expenseSchema = new mongoose.Schema({
     //     type: String
     // },
     budgetId: {
-        type: mongoose.Schema.Types.ObjectId
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Budget"
     },
 }, { timestamps: true });
 
