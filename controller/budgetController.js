@@ -164,3 +164,74 @@ exports.updateBudget = async(req,res) => {
     }
   }
   
+  exports.getAllBudgets= async(req,res)=>{
+
+    const budgets= await budgetModel.find(req.params)
+  
+    if(!budgets){
+      res.status(404).json('no users available')
+    }
+    else{
+      res.status(200).json({message:"current budgets", budgets})
+    }
+  }
+
+  exports.deleteBudget = async (req, res) => {
+    try {
+        const { budgetId } = req.body;
+
+        // Check if budgetId is provided
+        if (!budgetId) {
+            return res.status(400).json({ error: 'Budget ID is required' });
+        }
+
+        // Find the budget by ID and delete
+        const deletedBudget = await budgetModel.findByIdAndDelete(budgetId);
+
+        // Check if budget exists
+        if (!deletedBudget) {
+            return res.status(404).json({ error: 'Budget not found' });
+        }
+
+        return res.status(200).json({ message: 'Budget deleted successfully', data: deletedBudget });
+    } catch (error) {
+        console.error('Error deleting budget:', error.message);
+        return res.status(500).json(error.message);
+    }
+};
+
+exports.checkBudget = async (req, res) => {
+    try {
+        // Query the database to retrieve user's budget and expenses
+        const userBudget = await budgetModel.findOne({ user: req.user._id });
+        const totalExpenses = await expenseModel.aggregate([
+            { $match: { user: req.user._id } },
+            { $group: { _id: null, total: { $sum: "$amount" } } }
+        ]);
+
+        if (!userBudget || !totalExpenses) {
+            return res.status(500).json({ error: 'Error retrieving budget and expenses' });
+        }
+      const Director = await companyModel.findOne({ role: 'Director' });
+
+      if (!Director) {
+          return res.status(404).json({ message: 'Director not found' });
+      }
+
+        // Compare total expenses with the budget amount
+        if (totalExpenses.total > userBudget.amount) {
+            const message = `Your expenses have exceeded your budget of ${userBudget.amount}.`;
+            await Email({
+                 email: Director.email,
+                  subject: 'Budget Alert', 
+                  html: message });
+
+            return res.status(200).json({ message: 'Budget alert email sent successfully' });
+        }
+
+        return res.status(200).json({ message: 'Budget is within limits' });
+    } catch (error) {
+        console.error('Error checking budget:', error);
+        return res.status(500).json({ error: 'Internal server error'});
+    }
+};

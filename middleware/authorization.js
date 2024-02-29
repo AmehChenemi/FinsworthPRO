@@ -108,8 +108,21 @@ const checkDirector = (req, res, next) => {
     }
 };
 
+// Middleware function to check budget before allowing expense creation
+const checkBudgetMiddleware = async (req, res, next) => {
+    try {
+        // importing budget check
+        await checkBudget(req.user._id);
+        
+        next();
+    } catch (error) {
+        console.error('Error checking budget:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+};
 
-  module.exports={authMiddleware,checkDirector, isAdmin, requireDirectorApproval}
+
+  module.exports={authMiddleware,checkDirector, isAdmin, requireDirectorApproval, checkBudgetMiddleware}
 
 
   

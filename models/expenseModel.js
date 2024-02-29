@@ -1,5 +1,8 @@
 const mongoose = require('mongoose');
-const { DateTime } = require('luxon');
+const {DateTime}=require ("luxon");
+const datetime = DateTime.now();
+const date = datetime.toFormat("yyyy-MM-dd");
+const time = datetime.toFormat("HH:mm:ss");
 
 const expenseSchema = new mongoose.Schema({
     category: {
@@ -12,12 +15,16 @@ const expenseSchema = new mongoose.Schema({
         type: Number
     },
     date: {
-        type: Date,
-        default: Date.now
+        type: String,
+        default: date
     },
-    PaymentMethod: {
-        type: String
+    time:{
+        type: String,
+        default: time
     },
+    // PaymentMethod: {
+    //     type: String
+    // },
     budgetId: {
         type: mongoose.Schema.Types.ObjectId
     },

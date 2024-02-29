@@ -138,22 +138,28 @@ const generateCode = () => {
 // Function to resend the OTP incase the user didn't get the OTP
 const resendOTP = async (req, res) => {
   try {
-    const id = req.params.id;
-    const user = await companyModel.findById(id);
+    const id = req.user._id;
+    const {email} = req.body
+    const user = await companyModel.findOne({email:email.toLowerCase()});
+    console.log(user)
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-
+ const token = jwt.sign({userId:user._id}, process.env.SECRET,{expiresIn:"5mins"})
     const generateOTP = () => {
       const min = 1000;
       const max = 9999;
       return Math.floor(Math.random() * (max - min + 1)) + min;
     }
+
+  
     
     const subject = 'Email Verification'
     const otp = generateOTP();
     user.newCode = otp;
+    await user.save()
+    
    
     // Retrieve user's full name from the database or another source
     const companyName = user.company_Name;
@@ -165,7 +171,7 @@ const resendOTP = async (req, res) => {
       subject
     });
 
-    await user.save();
+    // await user.save();
 
     return res.status(200).json({ message: 'Please check your email for the new OTP' });
   } catch (error) {
