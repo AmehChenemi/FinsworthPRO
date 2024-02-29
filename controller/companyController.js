@@ -176,7 +176,7 @@ const resendOTP = async (req, res) => {
       token: token,
       otp: otp
     }
-    return res.status(200).json({ message: 'Please check your email for the new OTP', data: resultggit add . });
+    return res.status(200).json({ message: 'Please check your email for the new OTP', data: result});
   } catch (error) {
     console.error('Error resending OTP:', error);
     return res.status(500).json({ message: 'An error occurred while resending OTP' });
