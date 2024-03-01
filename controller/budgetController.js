@@ -64,7 +64,7 @@ exports.createBudget = async (req, res) => {
 
 exports.calculateAmountSpent = async (req, res) => {
     try {
-        const { budgetId } = req.body;
+        const { budgetId } = req.params;
 
         if (!budgetId) {
             return res.status(400).json('BudgetId is required');
@@ -96,7 +96,7 @@ exports.calculateAmountSpent = async (req, res) => {
 
 exports.calculateRemainingBalance = async (req, res) => {
     try {
-        const { budgetId } = req.body;
+        const { budgetId } = req.params;
 
         if (!budgetId) {
             return res.status(400).json({ error: 'BudgetId is required' });

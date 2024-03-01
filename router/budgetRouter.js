@@ -13,6 +13,11 @@ router.post("/createBudget",authMiddleware,createBudget )
  router.get("/budgetBalance", calculateRemainingBalance)
 
  router.put("/updateBudget/:id", updateBudget)
+
+ router.put("/amountSpent/:id", updateBudget)
+
+ router.put("/budgetBalance/:id", updateBudget)
+
  
  router.delete("/deletebudget",authMiddleware,checkDirector, deleteBudget)
 

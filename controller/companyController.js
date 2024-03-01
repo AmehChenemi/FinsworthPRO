@@ -207,7 +207,7 @@ const resendOTP = async (req, res) => {
 
 const deleteUser = async (req, res) => {
   try {
-    const { userId } = req.body;
+    const { userId } = req.params;
 
     // Check if userId is provided
     if (!userId) {
@@ -231,51 +231,51 @@ const deleteUser = async (req, res) => {
 
 
 
-const resetPassword = async (req, res) => {
-  try {
-    const { email } = req.body;
+// const resetPassword = async (req, res) => {
+//   try {
+//     const { email } = req.body;
 
-    // Check if email is provided
-    if (!email) {
-      return res.status(400).json({ error: 'Email is required' });
-    }
+//     // Check if email is provided
+//     if (!email) {
+//       return res.status(400).json({ error: 'Email is required' });
+//     }
 
-    // Generate a reset token
-    const resetToken = crypto.randomBytes(20).toString('hex');
+//     // Generate a reset token
+//     const resetToken = crypto.randomBytes(20).toString('hex');
 
-    const user = await companyModel.findOne({ email });
+//     const user = await companyModel.findOne({ email });
 
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
+//     if (!user) {
+//       return res.status(404).json({ error: 'User not found' });
+//     }
 
-    // Set reset token and expiry in user document
-    user.resetPasswordToken = resetToken;
-    user.resetPasswordExpires = Date.now() + 3600000; // Token valid for 1 hour
+//     // Set reset token and expiry in user document
+//     user.resetPasswordToken = resetToken;
+//     user.resetPasswordExpires = Date.now() + 3600000; // Token valid for 1 hour
 
-    // Save the updated user 
-    await user.save();
+//     // Save the updated user 
+//     await user.save();
 
-    // Construct email options
-    const emailOptions = {
-      email: user.email,
-      subject: 'Password Reset Request',
-      html: `
-                <p>You are receiving this email because you (or someone else) has requested the reset of the password for your account.</p>
-                <p>Please click on the following link, or paste this into your browser to complete the process:</p>
-                <p><a href="http://${req.headers.host}/reset/${resetToken}">Reset Password</a></p>
-                <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
-            `
-    };
+//     // Construct email options
+//     const emailOptions = {
+//       email: user.email,
+//       subject: 'Password Reset Request',
+//       html: `
+//                 <p>You are receiving this email because you (or someone else) has requested the reset of the password for your account.</p>
+//                 <p>Please click on the following link, or paste this into your browser to complete the process:</p>
+//                 <p><a href="http://${req.headers.host}/reset/${resetToken}">Reset Password</a></p>
+//                 <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
+//             `
+//     };
 
-    // Send password reset email
-    await Email(emailOptions);
-    return res.status(200).json({ message: 'Reset password email sent successfully' });
-  } catch (error) {
-    console.error('Error resetting password:', error.message);
-    return res.status(500).json(error.message);
-  }
-};
+//     // Send password reset email
+//     await Email(emailOptions);
+//     return res.status(200).json({ message: 'Reset password email sent successfully' });
+//   } catch (error) {
+//     console.error('Error resetting password:', error.message);
+//     return res.status(500).json(error.message);
+//   }
+// };
 
 exports.getOne = async (req, res) => {
   try {
@@ -323,7 +323,7 @@ const verifyUser = async (req, res) => {
   try {
     const email = req.body.email;
     const userInput = req.body.userInput.trim();
-    const userId = req.body.userId; // Assuming you get userId from req.body
+    const userId = req.params.userId; // Assuming you get userId from req.body
         // Check if the email is in the database
     const user = await companyModel.findOne({ email: email.toLowerCase() });
     if (!user) {
@@ -399,11 +399,10 @@ const login = async (req, res) => {
         return res.status(401).json({ error: 'Invalid password' });
       }
    
-      user.isVerified === true
-      //  const isVerified = user.isVerified 
-      //  if(!isVerified === true)
-      //  return res.status(404).json({message:"Kindly verify with the OTP that is sent to your email before you can log in"})
-        // Generate JWT token
+      if(!user.isVerified ){
+        res.status(400).json("Kindly verify with the OTP that is sent to your email before you can log in")
+      }
+     // Generate JWT token
         const token = jwt.sign(
           { userId: user._id, email },
           process.env.SECRET,
@@ -462,46 +461,47 @@ console.log(company)
   }
 };
 
+const resetPassword = async (req, res) =>{
+  try{
+      // get the token from the params
+      const {token} = req.params
+      // get the new password from the body
+      const {newPassword, confirmPassword} = req.body;
+      // verify the validity of the token
+      const decodedToken = jwt.verify(token, process.env.SECRET);
+      // get the user that has the token 
+      const user = await companyModel.findById(decodedToken.userId)
+      if(newPassword !== confirmPassword){ 
+          return res.status(404).json({
+              message: "Password does not match, enter password again"
+          })
+      }
+      if(!user){
+          return res.status(404).json({
+              message: "User not found"
+          })
+      }
 
-const forgotPassword = async (req, res) => {
-  try {
-    //get the email form the request body
-    const { email } = req.body
-    //  check if the user with the email provided is in the database
-    const user = await companyModel.findOne({ email })
-    if (!user) {
-      res.status(404).json({
-        message: "user with this email is not found"
+      //  encrypt the user new password
+      const salt = bcrypt.genSaltSync(10)
+      const hash = bcrypt.hashSync(newPassword, salt)
+
+      // update the user password in the database
+      user.password = hash;
+      //  save the changes to the database
+      await user.save()
+
+      res.status(200).json({
+          message:"Password reset successfully"
       })
-    }
-    // if the user is existing in the database, generate a token for the user
-    const token = jwt.sign({ userId: user._id }, process.env.SECRET, { expiresIn: '10m' })
-    //console.log(token)
-
-    const link = `${req.protocol}://${req.get('host')}/reset-password/${token}`;
-
-    const html = dynamicEmail(link)
-
-    await Email({
-      email: user.email,
-      subject: 'KINDLY VERIFY YOUR EMAIL TO RESET YOUR PASSWORD',
-      html:'<p>please reset your password.</p>' //add a link
-    })
-
-    res.status(200).json({
-      message: 'Mail sent successfully'
-    })
-
-  } catch (err) {
-    res.status(500).json({
-      error: err.message
-    })
+      
+      
+  }catch(err){
+      res.status(500).json({
+          error:err.message
+      })
   }
-};
-
-
-
-  
+}  
 const signout = async (req, res) => {
   try{
       const userId = req.user.id;
@@ -551,16 +551,55 @@ const acctManager = await accountManagerModel.find({company:id})
     return res.status(500).json({ message: "Internal server error: " + err.message });
   }
 }
+
+const changeProfilePicture = async (req, res) => {
+  try {
+
+      // get the id from the token
+      const id = req.user.userId
+
+      // get the user with the id
+      const user = await companyModel.findById(id)
+      if (!user) {
+          return res.status(404).json({
+              error:"user not found"
+          })
+      }
+
+      // detroy the prvious image and update the new one
+      if (user.profilePicture) {
+          const oldImage = user.profilePicture.split("/").pop().split(".")[0]
+          await cloudinary.uploader.destroy(oldImage)
+
+      }
+
+      // update the new image
+      const file = req.files.profilePicture.tempFilePath
+      const newImage = await cloudinary.uploader.upload(file)
+      await userModel.findByIdAndUpdate(id,{profilePicture:newImage.secure_url},{new:true})
+
+      res.status(200).json({
+          message: "Successfully changed profile picture"
+      })
+
+  } catch (err) {
+      res.status(500).json({
+          error:err.message
+      })
+  }
+}
 module.exports = {
   verifyUser,
   login,
   inviteUser,
   forgotPassword,
+  resetPassword,
   updateUser,
   resendOTP,
   resetPassword,
   getAcctUsers,
   deleteUser,
   createUser,
+  changeProfilePicture,
   signout
 }
