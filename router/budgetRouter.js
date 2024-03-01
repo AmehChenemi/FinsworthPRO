@@ -1,7 +1,7 @@
 const express= require("express")
 
 const {createBudget, getAllBudgets, deleteBudget, updateBudget, calculateAmountSpent, calculateRemainingBalance }=require('../controller/budgetController')
-const{authMiddleware,checkDirector,requireDirectorApproval}=require("../middleware/authorization")
+const{authMiddleware,checkDirector}=require("../middleware/authorization")
 const router= express.Router()
 
 router.post("/createBudget",authMiddleware,createBudget )

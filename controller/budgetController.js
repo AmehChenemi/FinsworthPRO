@@ -2,8 +2,7 @@ const budgetModel = require("../models/budgetModel");
 const companyModel = require("../models/company.js");
 const { DateTime } = require('luxon');
 const expenseModel= require("../models/expenseModel")
-const { requireDirectorApproval } = require("../middleware/authorization");
-
+const {requireDirectorApproval} = require('../middleware/authorization.js')
 
 exports.createBudget = async (req, res) => {
     try {
@@ -11,11 +10,11 @@ exports.createBudget = async (req, res) => {
             return res.status(401).json({ error: 'Unauthorized. Please log in to perform this operation.' });
         }
         // Extract user ID from authentication token
-        const userId = req.user._id;
+        const companyId = req.user._id;
         // Check if user exists
-        const user = await companyModel.findById(userId);
-        if (!user) {
-            return res.status(404).json({ error: 'User not found. Please log in to perform this operation.' });
+        const company = await companyModel.findById(companyId);
+        if (!company) {
+            return res.status(404).json({ error: 'Company not found. Please log in to perform this operation.' });
         }
 
         
@@ -40,7 +39,7 @@ exports.createBudget = async (req, res) => {
         }
       
         const budget = new budgetModel({
-            user: userId,
+            company: company.company_Name,
             startDate: startDate.toJSDate(),
             endDate: endDate.toJSDate(),
             amount,
@@ -51,8 +50,8 @@ exports.createBudget = async (req, res) => {
         const savedBudget = await budget.save();
 
         // Update user's budgets array to include the newly created budget
-        user.budgets.push(savedBudget._id);
-        await user.save();
+        company.budgets.push(savedBudget._id);
+        await company.save();
 
         return res.status(201).json({ message: 'Fixed budget created successfully', savedBudget });
     } catch (error) {
@@ -165,16 +164,23 @@ exports.updateBudget = async(req,res) => {
   }
   
   exports.getAllBudgets= async(req,res)=>{
-
-    const budgets= await budgetModel.find(req.params)
+try{
+    const{companyId} = req.body
+    const budgets= await budgetModel.find({companyId:companyId})
   
-    if(!budgets){
-      res.status(404).json('no users available')
+    if(!budgets.length ===0){
+      return res.status(404).json('no budget available for the specified company available')
     }
     else{
       res.status(200).json({message:"current budgets", budgets})
     }
-  }
+}catch(error){
+    console.error('error getting all Budget details:', error)
+    res.json({error:error.message})
+}
+
+};
+
 
   exports.deleteBudget = async (req, res) => {
     try {

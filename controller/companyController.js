@@ -77,7 +77,7 @@ const generateCode = () => {
 
 //     // const role = 'Director'
     
-     // Generate a JWT token
+    //  Generate a JWT token
      const token = jwt.sign(
       {  email,userId:newUser._id, role:newUser.role,},
       process.env.SECRET,
@@ -121,11 +121,11 @@ const generateCode = () => {
 
     // Respond with success message and user data
     res.status(201).json({
-      message: `Welcome, ${newUser.company_Name}! Your verification is complete. Please proceed to the login page.`,
+      message: `Welcome, ${newUser.company_Name}! Kindly check your email to verify. `,
       data: savedUser,
       // role: newUser.role,
       companyCode:newUser.company_code,
-      token: token
+      // token: token
     })
   }catch (err) {
     console.error("Error:", err);
@@ -138,7 +138,7 @@ const generateCode = () => {
 // Function to resend the OTP incase the user didn't get the OTP
 const resendOTP = async (req, res) => {
   try {
-    const id = req.user._id;
+    // const id = req.user._id;
     const {email} = req.body
     const user = await companyModel.findOne({email:email.toLowerCase()});
     console.log(user)
@@ -146,7 +146,7 @@ const resendOTP = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
- const token = jwt.sign({userId:user._id}, process.env.SECRET,{expiresIn:"5mins"})
+//  const token = jwt.sign({userId:user._id}, process.env.SECRET,{expiresIn:"5mins"})
     const generateOTP = () => {
       const min = 1000;
       const max = 9999;
@@ -173,7 +173,7 @@ const resendOTP = async (req, res) => {
 
     // await user.save();
     const result = {
-      token: token,
+      // token: token,
       otp: otp
     }
     return res.status(200).json({ message: 'Please check your email for the new OTP', data: result});
@@ -185,23 +185,21 @@ const resendOTP = async (req, res) => {
 
 
 
-const getAllUsers = async (req, res) => {
+const getAllUsers= async (req, res) => {
   try {
-    // Find all users
-    const users = await companyModel.find();
+    const {companyId} = req.body; 
 
-    // Check if any users are found
+    const users = await companyModel.find({ companyId });
+
     if (!users || users.length === 0) {
-      return res.status(404).json({ message: 'No users available' });
+      return res.status(404).json({ message: "No users found for the specified company" });
     }
-    const userCount = users.length;
 
-    res.status(200).json({ message: 'Current users', userCount, users });
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    res.status(500).json(error.message);
+    return res.status(200).json({ users });
+  } catch (err) {
+    return res.status(500).json({ message: "Internal server error: " + err.message });
   }
-};
+}
 
 const deleteUser = async (req, res) => {
   try {
@@ -317,40 +315,34 @@ company_Name: req.body.company_Name
 
 
 
-const verifyUser = async(req, res) => {
+const verifyUser = async (req, res) => {
   try {
-    // const userId  = req.user.userId; 
-    const userId  = req.user._id; 
-
-    
-    let userInput = req.body.userInput.trim(); 
-
-    
-    const user = await companyModel.findById(userId);
-
+    const email = req.body.email;
+    const userInput = req.body.userInput.trim();
+    const userId = req.body.userId; // Assuming you get userId from req.body
+        // Check if the email is in the database
+    const user = await companyModel.findOne({ email: email.toLowerCase() });
     if (!user) {
-      return res.status(400).json({
-        message: "User not found"
-      });
+      return res.status(404).json({ message: "User does not exist" });
     }
 
-    // Convert userInput and user.newCode to strings for comparison
+    // Check if user has a verification code
+    if (!user.newCode) {
+      return res.status(400).json({ message: "Incorrect OTP, Please check your email for the code" });
+    }
+
     const userInputStr = String(userInput);
     const newCodeStr = String(user.newCode);
 
     if (userInputStr === newCodeStr) {
       // Update the user if verification is successful
       await companyModel.findByIdAndUpdate(userId, { isVerified: true }, { new: true });
-      return res.status(200).json({Message:"You have been successfully verified. Kindly visit the login page."});
-    } else {
-      return res.status(400).json({
-        message: "Incorrect OTP, Please check your email for the code"
-      });
-    }
-  }catch(err){
-    return res.status(500).json({ 
-      message: "Internal server error: " + err.message,
-    });
+      return res.status(200).json({ message: "You have been successfully verified. Kindly visit the login page." });
+    } 
+      // return res.status(400).json({ message: "Incorrect OTP, Please check your email for the code" });
+    
+  } catch (err) {
+    return res.status(500).json({ message: "Internal server error: " + err.message });
   }
 };
 
@@ -403,6 +395,9 @@ const login = async (req, res) => {
         return res.status(401).json({ error: 'Invalid password' });
       }
    
+       const isVerified = user.isVerified 
+       if(isVerified === false)
+       return res.status(404).json({message:"Kindly verify with the OTP that is sent to your email before you can log in"})
         // Generate JWT token
         const token = jwt.sign(
           { userId: user._id, email },

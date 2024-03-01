@@ -1,5 +1,6 @@
 const expenseModel = require ('../models/expenseModel')
 const budgetModel = require ('../models/budgetModel.js')
+const companyModel = require('../models/company.js');
 
 exports. createExpenses = async(req, res) =>{
     try{
@@ -18,15 +19,7 @@ exports. createExpenses = async(req, res) =>{
         message:'Expenses cannot be made on this budget, budget must be approved by director before expenses can be made'
        })
 
-    //   if(checkBudget.approvedByDirector === true) 
-    //   return res.status(200).json({
-    //        message:'Budget approved for expenses'
-    //    })
-
-        //  check the amount that is allocated to each categories
-        // if(checkBudget.categories.amount === 0 ){
-        //  return res.status(400).json({message:'There is no budget allocated to this category'})
-        // }
+    
    
         //  create an instance of the expenses
        const expenses = await expenseModel.create({
@@ -54,8 +47,16 @@ exports. createExpenses = async(req, res) =>{
 }
 exports.getAllExpenses = async(req, res) => {
     try{
+
+        // grt the company's id
+        const companyId = req.body.companyId
+        // find if the company is existing in the database
+        const company = await companyModel.findOne({companyId})
+        if(!company) {
+        res.status(404).json({Mesage:"Company not found, cannot get all Expenses"})
+        }
         //  find all the expenses from the expense database
- const allExpenses = await expenseModel.find().populate("budgetId")
+        const allExpenses = await expenseModel.find({companyId}).populate("budgetId")
         // get the length of all expenses in the database
         const totalExpenses = allExpenses.length
         // check if there is no expenses in the database
