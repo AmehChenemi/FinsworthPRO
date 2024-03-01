@@ -19,7 +19,7 @@ exports.accountManagerSignup = async (req, res) => {
         const { fullNames, email, password, confirmPassword, companyCode} = req.body;
 
            // Check for required fields
-    if ( !fullNames|| !email || !password ||!confirmPassword  ||!confirmPassword ||!companyCode) {
+    if ( !fullName|| !email || !password ||!confirmPassword  ||!confirmPassword ||!companyCode) {
         return res.status(400).json({
           message: "Missing required fields."});
       }
@@ -47,7 +47,7 @@ exports.accountManagerSignup = async (req, res) => {
 
         // Create a new user
         const newUser = new accountManagerModel({
-            fullNames,
+            fullName,
             email,
             company:code._id,
             role,
@@ -68,7 +68,7 @@ exports.accountManagerSignup = async (req, res) => {
         await Email({
             email: newUser.email,
             subject: 'Welcome!!',
-            html: `<p>Dear ${newUser.fullNames}, welcome onboard, your account has been created successfully!</p>`
+            html: `<p>Dear ${newUser.fullName}, welcome onboard, your account has been created successfully!</p>`
         });
 
         // Respond with success message and token

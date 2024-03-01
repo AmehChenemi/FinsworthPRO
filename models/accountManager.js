@@ -1,7 +1,7 @@
 const mongoose= require("mongoose")
 
 const accountSchema= new mongoose.Schema({
-    fullNames:{
+    fullName:{
         type:String,
         required:true
     },

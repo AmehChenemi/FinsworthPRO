@@ -2,6 +2,7 @@ const express= require("express")
 const companyModel= require("../models/company.js")
 const { gentoken } = require('../jwt');
 const jwt = require("jsonwebtoken");
+const accountManagerModel = require('../models/accountManager.js')
 // const { validateCreateUser, validateLogin } = require('../validation/validation');
 const cloudinary = require("../middleware/cloudinary");
 const { dynamicEmail } = require("../html");
@@ -185,21 +186,24 @@ const resendOTP = async (req, res) => {
 
 
 
-const getAllUsers= async (req, res) => {
-  try {
-    const {companyId} = req.body; 
+// const getAllUsers= async (req, res) => {
+//   try {
+//     const {companyId} = req.body; 
+//     if (!companyId){
+//       return res.status(404).json('No Id')
+//     }
 
-    const users = await companyModel.find({ companyId });
+//     const users = await companyModel.find({ companyId });
 
-    if (!users || users.length === 0) {
-      return res.status(404).json({ message: "No users found for the specified company" });
-    }
+//     if (!users || users.length === 0) {
+//       return res.status(404).json({ message: "No users found for the specified company" });
+//     }
 
-    return res.status(200).json({ users });
-  } catch (err) {
-    return res.status(500).json({ message: "Internal server error: " + err.message });
-  }
-}
+//     return res.status(200).json({ users });
+//   } catch (err) {
+//     return res.status(500).json({ message: "Internal server error: " + err.message });
+//   }
+// }
 
 const deleteUser = async (req, res) => {
   try {
@@ -528,7 +532,25 @@ const signout = async (req, res) => {
 }
 
 
+const getAcctUsers= async (req, res) => {
+  try {
+    
+    const id = req.user._id
 
+    const user = await companyModel.findById(id);
+
+    if (!user) {
+      return res.status(404).json({ message: "No users found for the specified company" });
+    }
+const acctManager = await accountManagerModel.find({company:id})
+// if(!acctManager || acctManager.length === 0) {
+//   return res.status(404).json({error:""})
+// }
+    return res.status(200).json({ acctManager });
+  } catch (err) {
+    return res.status(500).json({ message: "Internal server error: " + err.message });
+  }
+}
 module.exports = {
   verifyUser,
   login,
@@ -537,7 +559,7 @@ module.exports = {
   updateUser,
   resendOTP,
   resetPassword,
-  getAllUsers,
+  getAcctUsers,
   deleteUser,
   createUser,
   signout
