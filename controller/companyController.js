@@ -327,7 +327,7 @@ const verifyUser = async (req, res) => {
     }
 
     // Check if user has a verification code
-    if (!user.newCode) {
+    if (!user.newCode ) {
       return res.status(400).json({ message: "Incorrect OTP, Please check your email for the code" });
     }
 
