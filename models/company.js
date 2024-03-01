@@ -24,10 +24,10 @@ const companySchema= new mongoose.Schema({
     company_code:{
         type:Number,       
     },
-   userId:{
-    type:String,
-    require:true
-   },
+//    userId:{
+//     type:String,
+//     require:true
+//    },
     userInput:{
         type:String
     },
@@ -69,4 +69,4 @@ const companySchema= new mongoose.Schema({
 
   const companyModel= mongoose.model("Company",companySchema)
 
-  module.exports= companyModel
+  module.exports= companyMo
