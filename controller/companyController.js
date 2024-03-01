@@ -395,9 +395,10 @@ const login = async (req, res) => {
         return res.status(401).json({ error: 'Invalid password' });
       }
    
-       const isVerified = user.isVerified 
-       if(isVerified === false)
-       return res.status(404).json({message:"Kindly verify with the OTP that is sent to your email before you can log in"})
+      user.isVerified === true
+      //  const isVerified = user.isVerified 
+      //  if(!isVerified === true)
+      //  return res.status(404).json({message:"Kindly verify with the OTP that is sent to your email before you can log in"})
         // Generate JWT token
         const token = jwt.sign(
           { userId: user._id, email },
