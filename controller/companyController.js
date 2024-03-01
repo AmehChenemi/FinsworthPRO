@@ -399,8 +399,8 @@ const login = async (req, res) => {
         return res.status(401).json({ error: 'Invalid password' });
       }
    
-      if(!user.isVerified ){
-        res.status(400).json("Kindly verify with the OTP that is sent to your email before you can log in")
+      if(user.isVerified === false){
+       return res.status(400).json("Kindly verify with the OTP that is sent to your email before you can log in")
       }
      // Generate JWT token
         const token = jwt.sign(
@@ -502,6 +502,45 @@ const resetPassword = async (req, res) =>{
       })
   }
 }  
+
+const forgotPassword = async (req, res) =>{
+  try{
+      // extract user email from the req.body
+    const { email} = req.body
+  //   find the user data  from the database using the email provided
+    const user = await userModel.findOne({email})
+  //   check if the user is existing in the database
+  if(!user){ 
+      return res.status(404).json({
+          message:"User with email not found"
+      })
+  }
+  // if a user is found generate a token for the user
+  const token = jwt.sign({userId:user._id }, process.env.jwtSecret,{expiresIn:'10m'})
+  console.log(token)
+
+  const link = `${req.protocol}://${req.get('host')}/reset-password/${token}/${user.token}`;
+  const html = dynamicMail(link, user.fullName.toUpperCase().slice(0, 1));
+
+  await sendMail({
+      email: user.email,
+      subject:"Password reset",
+      html
+  });
+
+  // send a suceess message
+  res.status(200).json({
+  message:"Reset password email sent successfully"
+  })
+
+  }catch(err){
+      res.status(500).json({
+          error:err.message
+      })
+  }
+}
+
+
 const signout = async (req, res) => {
   try{
       const userId = req.user.id;
