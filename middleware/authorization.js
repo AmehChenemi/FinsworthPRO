@@ -21,7 +21,7 @@ const authMiddleware = async (req, res, next) => {
         }
 
         // Fetch user from database based on the decoded token
-        const user = await companyModel.findById(decodedToken.companyId);
+        const user = await companyModel.findById(decodedToken.userId);
         // console.log(user)
         if (!user) {
             return res.status(404).json({ error: 'User  cannot be found' });
