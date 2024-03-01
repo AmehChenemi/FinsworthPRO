@@ -6,11 +6,12 @@ const {requireDirectorApproval} = require('../middleware/authorization.js')
 
 exports.createBudget = async (req, res) => {
     try {
-        if (!req.user) {
-            return res.status(401).json({ error: 'Unauthorized. Please log in to perform this operation.' });
-        }
+      
         // Extract user ID from authentication token
         const companyId = req.user._id;
+        if (!companyId) {
+            return res.status(401).json({ error: 'Unauthorized. Please log in to perform this operation.' });
+        }
         // Check if user exists
         const company = await companyModel.findById(companyId);
         if (!company) {
