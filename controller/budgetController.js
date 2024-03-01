@@ -9,6 +9,7 @@ exports.createBudget = async (req, res) => {
       
         // Extract user ID from authentication token
         const companyId = req.user._id;
+         console.log(req.user)
         if (!companyId) {
             return res.status(401).json({ error: 'Unauthorized. Please log in to perform this operation.' });
         }
