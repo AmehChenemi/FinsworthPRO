@@ -321,32 +321,43 @@ company_Name: req.body.company_Name
 
 const verifyUser = async (req, res) => {
   try {
-    const email = req.body.email;
-    const userInput = req.body.userInput.trim();
-    const userId = req.params.userId; // Assuming you get userId from req.body
-        // Check if the email is in the database
+    const { email, userInput } = req.body;
+    const userId = req.params.id; // Assuming you get userId from req.params
+
+    // Check if the email is in the database
     const user = await companyModel.findOne({ email: email.toLowerCase() });
+    
     if (!user) {
       return res.status(404).json({ message: "User does not exist" });
     }
 
-    // Check if user has a verification code
-    if (!user.newCode ) {
-      return res.status(400).json({ message: "Incorrect OTP, Please check your email for the code" });
+    // Check if the user is already verified
+    if (user.isVerified) {
+      return res.status(400).json({ message: "User is already verified" });
     }
 
-    const userInputStr = String(userInput);
-    const newCodeStr = String(user.newCode);
+    // Check if user has a verification code
+    if (!user.newCode) {
+      return res.status(400).json({ message: "No verification code found. Please request a new one." });
+    }
 
-    if (userInputStr === newCodeStr) {
-      // Update the user if verification is successful
-      await companyModel.findByIdAndUpdate(userId, { isVerified: true }, { new: true });
-      return res.status(200).json({ message: "You have been successfully verified. Kindly visit the login page." });
-    } 
-      // return res.status(400).json({ message: "Incorrect OTP, Please check your email for the code" });
-    
+    // Trim and stringify the userInput and newCode for comparison
+    const userInputStr = String(userInput).trim();
+    const newCodeStr = String(user.newCode).trim();
+
+    // Compare the userInput with the stored OTP (newCode)
+    if (userInputStr !== newCodeStr) {
+      return res.status(400).json({ message: "Incorrect OTP. Please check your email for the correct code." });
+    }
+
+    // Update the user if verification is successful
+    await companyModel.findByIdAndUpdate(userId, { isVerified: true }, { new: true });
+    console.log("User verified:", user);
+    return res.status(200).json({ message: "You have been successfully verified. Kindly visit the login page." });
+
   } catch (err) {
-    return res.status(500).json({ message: "Internal server error: " + err.message });
+    console.error("Error during verification:", err);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -393,11 +404,13 @@ const login = async (req, res) => {
     if (!user) {
       res.status(404).json({Message:" User not found"})
     }
+    console.log(user);
       // Compare passwords
-      const passwordMatch = await bcrypt.compare(password, user.password);
+      const passwordMatch = await bcrypt.compareSync(password, user.password);
       if (!passwordMatch) {
         return res.status(401).json({ error: 'Invalid password' });
       }
+     console.log(passwordMatch);
    
       if(user.isVerified === false){
        return res.status(400).json("Kindly verify with the OTP that is sent to your email before you can log in")
