@@ -16,7 +16,7 @@ exports.accountManagerSignup = async (req, res) => {
         //     password:req.body.fullNames,
 
         // }
-        const { fullNames, email, password, confirmPassword, companyCode} = req.body;
+        const { fullName, email, password, confirmPassword, companyCode} = req.body;
 
            // Check for required fields
     if ( !fullName|| !email || !password ||!confirmPassword  ||!confirmPassword ||!companyCode) {
