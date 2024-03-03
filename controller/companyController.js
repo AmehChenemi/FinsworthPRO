@@ -136,54 +136,53 @@ const generateCode = () => {
 };
 
 
-// Function to resend the OTP incase the user didn't get the OTP
 const resendOTP = async (req, res) => {
   try {
-    // const id = req.user._id;
-    const {email} = req.body
-    const user = await companyModel.findOne({email:email.toLowerCase()});
-    console.log(user)
+    const id = req.user._id
+    const { email } = req.body;
+    const user = await companyModel.findOne({ email: email.toLowerCase() });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-//  const token = jwt.sign({userId:user._id}, process.env.SECRET,{expiresIn:"5mins"})
+
+   
+    const token = jwt.sign({ userId: user._id }, process.env.SECRET, { expiresIn: '5m' });
+
     const generateOTP = () => {
       const min = 1000;
       const max = 9999;
       return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
+    };
 
-  
-    
-    const subject = 'Email Verification'
+    const subject = 'Email Verification';
     const otp = generateOTP();
     user.newCode = otp;
-    await user.save()
+    await user.save();
+
+    const companyName = user.company_Name; // Ensure the correct variable name
+
     
-   
-    // Retrieve user's full name from the database or another source
-    const companyName = user.company_Name;
-    
-    const html = dynamicEmail(companyName, otp)
-     Email({
+    const html = dynamicEmail(companyName, otp);
+
+
+    Email({
       email: user.email,
       html,
       subject
     });
 
-    // await user.save();
     const result = {
-      // token: token,
       otp: otp
-    }
-    return res.status(200).json({ message: 'Please check your email for the new OTP', data: result, token:token});
+      //token: token 
+    };
+
+    return res.status(200).json({ message: 'Please check your email for the new OTP', data: result });
   } catch (error) {
     console.error('Error resending OTP:', error);
-    return res.status(500).json({ message: 'An error occurred while resending OTP' });
+    return res.status(500).json({ message: 'An error occurred while resending OTP', error: error.message });
   }
 };
-
 
 
 // const getAllUsers= async (req, res) => {
