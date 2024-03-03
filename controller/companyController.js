@@ -80,9 +80,9 @@ const generateCode = () => {
     
     //  Generate a JWT token
      const token = jwt.sign(
-      {  email,userId:newUser._id, role:newUser.role,},
+      {  email:newUser.email,userId:newUser._id, role:newUser.role,},
       process.env.SECRET,
-      { expiresIn: "1800s" }
+      { expiresIn: "5mins" }
     );
     
 //     // Construct a consistent full name
@@ -94,20 +94,9 @@ const generateCode = () => {
 
     
     
-
-    const generateOTP = () => {
-      const min = 1000;
-      const max = 9999;
-      return Math.floor(Math.random() * (max - min + 1)) + min;
-  }
-  
-  const otp = generateOTP();
-  
-  const subject = "Kindly verify";
-
-    savedUser.newCode = otp
-    const html = dynamicEmail(newUser.company_Name, otp)
-
+ const link = `https://finsworth-pro.vercel.app/verification`
+ const html = dynamicEmail(savedUser.company_Name,link)
+ const subject = 'kindly verify your account below'
    
     Email({
       email: savedUser.email,
@@ -126,7 +115,7 @@ const generateCode = () => {
       data: savedUser,
       // role: newUser.role,
       companyCode:newUser.company_code,
-      // token: token
+      token: token
     })
   }catch (err) {
     console.error("Error:", err);
@@ -137,52 +126,108 @@ const generateCode = () => {
 
 
 // Function to resend the OTP incase the user didn't get the OTP
-const resendOTP = async (req, res) => {
-  try {
-    // const id = req.user._id;
-    const {email} = req.body
-    const user = await companyModel.findOne({email:email.toLowerCase()});
-    console.log(user)
+// const resendOTP = async (req, res) => {
+//   try {
+//     // const id = req.user._id;
+//     const {email} = req.body
+//     const user = await companyModel.findOne({email:email.toLowerCase()});
+//     console.log(user)
 
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-//  const token = jwt.sign({userId:user._id}, process.env.SECRET,{expiresIn:"5mins"})
-    const generateOTP = () => {
-      const min = 1000;
-      const max = 9999;
-      return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
+//     if (!user) {
+//       return res.status(404).json({ message: 'User not found' });
+//     }
+// //  const token = jwt.sign({userId:user._id}, process.env.SECRET,{expiresIn:"5mins"})
+//     const generateOTP = () => {
+//       const min = 1000;
+//       const max = 9999;
+//       return Math.floor(Math.random() * (max - min + 1)) + min;
+//     }
 
   
     
-    const subject = 'Email Verification'
-    const otp = generateOTP();
-    user.newCode = otp;
-    await user.save()
+//     const subject = 'Email Verification'
+//     const otp = generateOTP();
+//     user.newCode = otp;
+//     await user.save()
     
    
-    // Retrieve user's full name from the database or another source
-    const companyName = user.company_Name;
+//     // Retrieve user's full name from the database or another source
+//     const companyName = user.company_Name;
     
-    const html = dynamicEmail(companyName, otp)
-     Email({
-      email: user.email,
-      html,
-      subject
-    });
+//     const html = dynamicEmail(companyName, otp)
+//      Email({
+//       email: user.email,
+//       html,
+//       subject:'Kindly verify'
+//     });
 
-    // await user.save();
-    const result = {
-      // token: token,
-      otp: otp
-    }
-    return res.status(200).json({ message: 'Please check your email for the new OTP', data: result});
-  } catch (error) {
-    console.error('Error resending OTP:', error);
-    return res.status(500).json({ message: 'An error occurred while resending OTP' });
+//     // await user.save();
+//     // const result = {
+//     //   // token: token,
+//     //   otp: otp
+//     // }
+//     return res.status(200).json({ message: 'Please check your email for the new OTP', data: result, token:token});
+//   } catch (error) {
+//     console.error('Error resending OTP:', error);
+//     return res.status(500).json({ message: 'An error occurred while resending OTP' });
+//   }
+// };
+
+const resendVerification = async (req,res)=>{
+  try{
+
+      // get the user's email
+      const {email} = req.body
+      if (!email) {
+          return res.status(404).json({
+            error: "Please enter your email address"
+          });
+        }
+    
+
+      // find the user with the email
+      const user = await companyModel.findOne({email:email.toLowerCase()})
+      if(!user){
+          return res.status(404).json({
+              error:"email not found"
+          })
+      }
+
+     // check if the user is already verified
+      if(user.isVerified === true){
+          return res.status(400).json({
+              error:"user already verified"
+          })
+      }        
+
+      // generate a token for the user
+      const token = jwt.sign({
+          userId:user._id,
+          email:user.email,
+      },process.env.SECRET,{expiresIn: "5mins"})
+
+      // verify the users email
+      const link = `${req.protocol}://${req.get("host")}/api/verify/${token}`
+      const html = dynamicEmail(link,savedUser.company_Name)
+
+      Email({
+          email:user.email,
+          subject: "KIND VERIFY YOUR ACCOUNT",
+          html:html
+      })
+
+      res.status(200).json({
+          message: "verification mail sent to your email"
+      })
+
+
+  }catch(err){
+      res.status(500).json({
+          error:err.message
+      })
   }
-};
+}
+
 
 
 
@@ -321,16 +366,20 @@ company_Name: req.body.company_Name
 
 const verifyUser = async (req, res) => {
   try {
-    const { email, userInput } = req.body;
-    const userId = req.params.id; // Assuming you get userId from req.params
+    const {token} = req.params;
+    const { userInput } = req.body;
+
+    // check the validity of the token
+    const decodeToken = jwt.verify(token,process.env.SECRET)
 
     // Check if the email is in the database
-    const user = await companyModel.findOne({ email: email.toLowerCase() });
+    const user = await companyModel.findOne({ email:decodeToken.email});
     
     if (!user) {
       return res.status(404).json({ message: "User does not exist" });
     }
-
+   
+    
     // Check if the user is already verified
     if (user.isVerified) {
       return res.status(400).json({ message: "User is already verified" });
@@ -481,7 +530,7 @@ const resetPassword = async (req, res) =>{
       // get the new password from the body
       const {newPassword, confirmPassword} = req.body;
       // verify the validity of the token
-      const decodedToken = jwt.verify(token, process.env.SECRET);
+      const decodedToken = jwt.verify(token, process.env.SECRET)
       // get the user that has the token 
       const user = await companyModel.findById(decodedToken.userId)
       if(newPassword !== confirmPassword){ 
@@ -529,13 +578,13 @@ const forgotPassword = async (req, res) =>{
       })
   }
   // if a user is found generate a token for the user
-  const token = jwt.sign({userId:user._id }, process.env.jwtSecret,{expiresIn:'10m'})
+  const token = jwt.sign({userId:user._id }, process.env.SECRET,{expiresIn:'10m'})
   console.log(token)
 
-  const link = `${req.protocol}://${req.get('host')}/reset-password/${token}/${user.token}`;
-  const html = dynamicMail(link, user.fullName.toUpperCase().slice(0, 1));
+  const link = `${req.protocol}://${req.get('host')}/api/reset-password/${token}/${savedUser.token}`;
+  const html = dynamicMail(link, user.fullName);
 
-  await sendMail({
+  await sendEmail({
       email: user.email,
       subject:"Password reset",
       html
@@ -608,7 +657,7 @@ const changeProfilePicture = async (req, res) => {
   try {
 
       // get the id from the token
-      const id = req.user.userId
+      const id = req.user._id
 
       // get the user with the id
       const user = await companyModel.findById(id)
@@ -647,8 +696,7 @@ module.exports = {
   forgotPassword,
   resetPassword,
   updateUser,
-  resendOTP,
-  resetPassword,
+  resendVerification,
   getAcctUsers,
   deleteUser,
   createUser,

@@ -2,7 +2,7 @@ const express = require("express")
 
 // const { createUser, verify, login, getAllUsers, deleteUser, resetPassword, inviteUser, updateUser, resendOTP, signOut, forgotPassword } = require('../controller/companyController')
 // const companyController = require('../controller/companyController')
-const {createUser, verifyUser, login, inviteUser, resetPassword, forgotPassword, updateUser, changeProfilePicture, getAcctUsers, deleteUser, signout, resendOTP} = require('../controller/companyController')
+const {createUser, verifyUser, login, inviteUser, resetPassword, forgotPassword, updateUser, changeProfilePicture, getAcctUsers, deleteUser, signout, resendVerification} = require('../controller/companyController')
 
 const { authMiddleware, checkDirector, isAdmin } = require("../middleware/authorization.js")
 
@@ -10,9 +10,9 @@ const { validateCreateUser } = require("../validation/validation.js");
 
 const router = express.Router()
 router.post('/createUser', validateCreateUser, createUser)
-router.post("/verify/:id", verifyUser)
+router.post("/verify/:token", verifyUser)
 router.put("/changeProfilePic", authMiddleware, changeProfilePicture)
-router.post("/resendOtp", authMiddleware, resendOTP)
+router.post("/resendVerification", authMiddleware, resendVerification)
 router.post('/login', login)
 router.post('/reset-password/:token',resetPassword)
 router.post("/invite", authMiddleware, isAdmin, inviteUser)
