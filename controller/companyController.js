@@ -173,8 +173,8 @@ const resendOTP = async (req, res) => {
     });
 
     const result = {
-      otp: otp
-      //token: token 
+      otp: otp,
+      token: token 
     };
 
     return res.status(200).json({ message: 'Please check your email for the new OTP', data: result });
