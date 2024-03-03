@@ -321,20 +321,19 @@ company_Name: req.body.company_Name
 
 const verifyUser = async (req, res) => {
   try {
-    const {token} = req.params;
     const { userInput } = req.body;
+    const token = req.params.token; // Assuming token is passed in params
 
-    // check the validity of the token
-    const decodeToken = jwt.verify(token,process.env.SECRET)
+    // Decode the token to extract user ID
+    const decodedToken = jwt.verify(token, process.env.SECRET);
+    const userId = decodedToken.userId; // Assuming userId is included in the token payload
 
-    // Check if the email is in the database
-    const user = await companyModel.findOne({ email:decodedToken.email});
-    
+    // Check if the user exists
+    const user = await companyModel.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "User does not exist" });
     }
-   
-    
+
     // Check if the user is already verified
     if (user.isVerified) {
       return res.status(400).json({ message: "User is already verified" });
@@ -355,16 +354,17 @@ const verifyUser = async (req, res) => {
     }
 
     // Update the user if verification is successful
-    await companyModel.findByIdAndUpdate(userId, { isVerified: true }, { new: true });
+    user.isVerified = true;
+    await user.save();
+
     console.log("User verified:", user);
     return res.status(200).json({ message: "You have been successfully verified. Kindly visit the login page." });
 
   } catch (err) {
     console.error("Error during verification:", err);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json(err.message);
   }
 };
-
 
 const updateUser = async(req,res) => {
   try{

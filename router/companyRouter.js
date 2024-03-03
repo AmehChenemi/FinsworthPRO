@@ -10,7 +10,7 @@ const { validateCreateUser } = require("../validation/validation.js");
 
 const router = express.Router()
 router.post('/createUser', validateCreateUser, createUser)
-router.post("/verify/token", verifyUser)
+router.post('/verify/:token', verifyUser);
 router.put("/changeProfilePic", authMiddleware, changeProfilePicture)
 router.post("/resendOtp", authMiddleware, resendOTP)
 router.post('/login', login)
