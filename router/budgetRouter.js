@@ -8,9 +8,9 @@ router.post("/createBudget",authMiddleware,createBudget )
  
  router.get("/getAllBudgets", getAllBudgets)
 
- router.get("/amountSpent", calculateAmountSpent)
+ router.get("/amountSpent/:budgetId", calculateAmountSpent)
 
- router.get("/budgetBalance", calculateRemainingBalance)
+ router.get("/budgetBalance/:budgetId", calculateRemainingBalance)
 
  router.put("/updateBudget/:id", updateBudget)
 
