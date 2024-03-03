@@ -174,7 +174,7 @@ const resendOTP = async (req, res) => {
 
     // await user.save();
     const result = {
-      // token: token,
+      token: token,
       otp: otp
     }
     return res.status(200).json({ message: 'Please check your email for the new OTP', data: result, token:token});
@@ -328,7 +328,7 @@ const verifyUser = async (req, res) => {
     const decodeToken = jwt.verify(token,process.env.SECRET)
 
     // Check if the email is in the database
-    const user = await companyModel.findOne({ email:decodedToken.email});
+    const user = await companyModel.findOne({ email:decodeToken.email});
     
     if (!user) {
       return res.status(404).json({ message: "User does not exist" });
