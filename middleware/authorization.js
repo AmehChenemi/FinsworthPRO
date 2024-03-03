@@ -15,7 +15,7 @@ const authMiddleware = async (req, res, next) => {
         const token = authorizationHeader.split(' ')[1];
 
         // Verify the JWT token
-        const decodedToken = jwt.verify(token, process.env.SECRET);
+        const decodedToken = jwt.verify(token, process.env.SECRET, { expiresIn: '5d' });
         if (!decodedToken) {
             return res.status(401).json({ error: 'Invalid token' });
         }
