@@ -426,11 +426,11 @@ const login = async (req, res) => {
         );
 
         // Send login email
-        await Email({
-          email: user.email,
-          subject: 'Successful Login',
-          html: '<p>You have successfully logged in.</p>',
-        });
+        // await Email({
+        //   email: user.email,
+        //   subject: 'Successful Login',
+        //   html: '<p>You have successfully logged in.</p>',
+        // });
 
         return res.json({
           message: 'Welcome back to FinsworthPRO',
