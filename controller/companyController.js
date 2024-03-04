@@ -356,6 +356,14 @@ const verifyUser = async (req, res) => {
     user.isVerified = true;
     await user.save();
 
+    const link = 'https://finsworth-pro.vercel.app/verification'
+    const html= dynamicEmail(user.company_Name,link)
+    const subject='Kindly verify your account'
+
+    await Email({
+      link,html,subject
+    })
+
     console.log("User verified:", user);
     return res.status(200).json({ message: "You have been successfully verified. Kindly visit the login page." });
 
