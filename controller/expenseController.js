@@ -2,49 +2,56 @@ const expenseModel = require ('../models/expenseModel')
 const budgetModel = require ('../models/budgetModel.js')
 const companyModel = require('../models/company.js');
 
-exports. createExpenses = async(req, res) =>{
-    try{
-        // get the budget id, description and amount from the request body
-        const {category, description, budgetId, amount} = req.body
-        // check if the budhet is existing in the database
-        const checkBudget = await budgetModel.findById(budgetId)
-        if(!checkBudget){
-           return res.status(400).json({
-                message:"No Budget found"
-            })
+exports.createExpenses = async(req, res) => {
+    try {
+        // get the description, amount, and category from the request body
+        const { description, amount, category } = req.body;
+
+        // get the budget ID from the request parameters
+        const budgetId = req.params.budgetId;
+
+        // check if the budget exists in the database
+        const checkBudget = await budgetModel.findById(budgetId);
+        if (!checkBudget) {
+            return res.status(400).json({
+                message: "No Budget found"
+            });
         }
-        // check if the budget ia approved by the director
-        if(checkBudget.approvedByDirector === false)
-        return res.status(404).json({
-        message:'Expenses cannot be made on this budget, budget must be approved by director before expenses can be made'
-       })
 
-    
-   
-        //  create an instance of the expenses
-       const expenses = await expenseModel.create({
-         description, amount, category,
-         budgetId
-       })
+        // check if the budget is approved by the director
+        if (!checkBudget.approvedByDirector) {
+            return res.status(404).json({
+                message: 'Expenses cannot be made on this budget, budget must be approved by director before expenses can be made'
+            });
+        }
 
-    //    push the id of the expenses made to the array of expenses in the budget model
-       checkBudget.expenses.push(expenses._id)
+        // create an instance of the expenses
+        const expenses = await expenseModel.create({
+            description,
+            amount,
+            category,
+            budgetId
+        });
 
-    //    save the expenses made
-       const saveExpenses = await expenses.save()
-       await checkBudget.save()
+        // push the id of the expenses made to the array of expenses in the budget model
+        checkBudget.expenses.push(expenses._id);
 
-    //    return a succes msg after creation
-       res.status(201).json({message:'Expenses created successfully',
-        expenses:saveExpenses
-    })
-    // trow an error if there is
-    }catch(err){
+        // save the expenses made
+        await expenses.save();
+        await checkBudget.save();
+
+        // return a success msg after creation
+        res.status(201).json({
+            message: 'Expenses created successfully',
+            expenses
+        });
+    } catch (err) {
         res.status(500).json({
             error: err.message
-        })
+        });
     }
-}
+};
+
 exports.getAllExpenses = async(req, res) => {
     try{
 
