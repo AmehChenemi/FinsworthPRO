@@ -4,6 +4,6 @@ const {approveBudget} = require('../controller/budgetApprovalCont');
 const { isAdmin,authMiddleware,checkDirector } = require("../middleware/authorization");
 
 // Route for approving a budget
-router.put('/approve', authMiddleware,checkDirector, approveBudget);
+router.put('/approve/:budgetId', authMiddleware,checkDirector, approveBudget);
 
 module.exports = router;

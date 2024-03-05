@@ -4,7 +4,7 @@ const companyModel = require("../models/company");
 // Controller function to approve a budget
 exports.approveBudget = async (req, res) => {
     try {
-        const budgetId  = req.body.budgetId;
+        const budgetId  = req.params.budgetId;
 
         // Find the budget by ID
         const budget = await budgetModel.findById(budgetId);
