@@ -163,7 +163,7 @@ const resendOTP = async (req, res) => {
     const companyName = user.company_Name; // Ensure the correct variable name
 
     
-    const html = dynamicEmail(companyName, otp);
+    const html = dynamicEmail(companyName, link,otp);
 
 
     Email({
@@ -356,7 +356,7 @@ const verifyUser = async (req, res) => {
     user.isVerified = true;
     await user.save();
 
-    const link = 'https://finsworth-pro.vercel.app/verification'
+    const link = 'https://finsworth-pro.vercel.app/logi'
     const html= dynamicEmail(user.company_Name,link)
     const subject='Kindly verify your account'
 
