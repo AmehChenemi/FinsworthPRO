@@ -56,7 +56,7 @@ exports.getAllExpenses = async(req, res) => {
     try{
 
         // grt the company's id
-        const companyId = req.body.companyId
+        const companyId = req.params.companyId
         // find if the company is existing in the database
         const company = await companyModel.findOne({companyId})
         if(!company) {
@@ -89,7 +89,7 @@ exports.getAllExpenses = async(req, res) => {
 exports.getExpenses = async(req, res) => {
     try{
         // get the expense id from the req body
-        const {id} = req.body
+        const id = req.params.id
         // check if the id is existing in the database and populate the budget 
         const oneExpenses = await expenseModel.findById(id).populate("budgetId")
         if(!oneExpenses){ 
