@@ -50,7 +50,7 @@ const validateCreateUser = (req, res, next) => {
 
 const accountManager = (req,res,next) => {
     const validateAcctManager = Joi.object({
-        fullNames: Joi.string().trim().required().pattern(new RegExp('[A-Za-z]+(?:[\\s-][a-zA-Z]+)*$'))
+        fullName: Joi.string().trim().required().pattern(new RegExp('[A-Za-z]+(?:[\\s-][a-zA-Z]+)*$'))
         .messages({
           'string.base': 'Full name must be a string.',
           'string.empty': 'Full name cannot be empty.',
