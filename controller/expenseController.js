@@ -86,22 +86,28 @@ exports.getAllExpenses = async(req, res) => {
 }
 
 
-exports.getExpenses = async(req, res) => {
-    try{
-        // get the expense id from the req body
-        const id = req.params.id
-        // check if the id is existing in the database and populate the budget 
-        const oneExpenses = await expenseModel.findById(id).populate("budgetId")
-        if(!oneExpenses){ 
-            return res.status(404).json({message: "There are no expenses recorded for this budget "})
+exports.getExpenses = async (req, res) => {
+    try {
+    
+        const id = req.params.id;
+
+       
+        if (!id) {
+            return res.status(400).json({ error: "Expense ID not provided" });
         }
-        else{
-            res.status(200).json({expenditure:oneExpenses})
+
+        // Find the expense associated with the provided ID and populate the budget details
+        const oneExpense = await expenseModel.findById(id).populate("budgetId");
+
+        // If no expense found, return an empty array
+        if (!oneExpense) {
+            return res.status(200).json({ expenditure: [] });
         }
-}
- catch(err){
-    res.status(500).json({
-        error: err.message
-    })
-}
-}
+
+        res.status(200).json({ expenditure: oneExpense });
+    } catch (err) {
+        console.error("Error fetching expense:", err);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
