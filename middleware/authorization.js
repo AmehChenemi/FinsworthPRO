@@ -68,7 +68,7 @@ const checkDirector = (req, res, next) => {
     } else {
       // User is not the director, send forbidden error
       console.log(req.user)
-      res.status(403).json({ error: 'Forbidden. Only the director can perform this action.' });
+      res.status(403).json({ error: 'Forbidden. Only the director can perform this action.'});
     }
   };
   
