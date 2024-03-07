@@ -104,7 +104,7 @@ exports.getExpenses = async (req, res) => {
         res.status(200).json({ expenses });
     } catch (err) {
         console.error("Error fetching expenses:", err);
-        res.status(500).json({ error: "Internal server error" });
+        res.status(500).json(err.message);
     }
 };
 
