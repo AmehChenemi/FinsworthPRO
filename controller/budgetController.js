@@ -136,7 +136,7 @@ exports.calculateRemainingBalance = async (req, res) => {
         return res.json({ remainingBalance });
     } catch (error) {
         console.error('Error calculating remaining balance:', error);
-        return res.status(500).json({ error: 'Internal Server Error' });
+        return res.status(500).json(error.message);
     }
 };
 
@@ -241,5 +241,35 @@ exports.checkBudget = async (req, res) => {
     } catch (error) {
         console.error('Error checking budget:', error);
         return res.status(500).json({ error:error.message});
+    }
+};
+
+exports.calculateAverage = async (req, res) => {
+    try {
+        // Retrieve all budgets 
+        const allBudgets = await budgetModel.find();
+
+        // Retrieve all expenses 
+        const allExpenses = await expenseModel.find();
+
+        // Calculate total amount of budgets
+        const totalBudgetAmount = allBudgets.reduce((acc, budget) => acc + budget.amount, 0);
+
+        // Calculate total amount of expenses
+        const totalExpenseAmount = allExpenses.reduce((acc, expense) => acc + expense.amount, 0);
+
+        // Calculate average budget amount
+        const averageBudgetAmount = allBudgets.length > 0 ? totalBudgetAmount / allBudgets.length : 0;
+
+        // Calculate average expense amount
+        const averageExpenseAmount = allExpenses.length > 0 ? totalExpenseAmount / allExpenses.length : 0;
+
+        res.status(200).json({ 
+            averageBudgetAmount,
+            averageExpenseAmount
+        });
+    } catch (err) {
+        console.error("Error calculating average:", err);
+        res.status(500).json(err.message);
     }
 };

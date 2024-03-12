@@ -8,7 +8,7 @@ const {createExpenses, getAllExpenses, getExpenses} = require('../controller/exp
 
 router.post('/create-expenses/:budgetId', createExpenses)
 router.get('/get-all-expenses', getAllExpenses)
-router.get('/get-expenses', getExpenses)
+router.get('/get-expenses/:budgetId', getExpenses)
 
 module.exports = router
 

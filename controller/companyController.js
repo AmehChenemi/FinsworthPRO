@@ -427,18 +427,19 @@ const login = async (req, res) => {
        return res.status(400).json("Kindly verify with the OTP that is sent to your email before you can log in")
       }
      // Generate JWT token
-        const token = jwt.sign(
-          { userId: user._id, email, role:'Director' },
-          process.env.SECRET,
-          { expiresIn: '2d' }
-        );
+const token = jwt.sign(
+  { userId: user._id, email, role: 'Director' }, 
+  process.env.SECRET, 
+  { expiresIn: '2d' } 
+);
 
-        // Send login email
-        // await Email({
-        //   email: user.email,
-        //   subject: 'Successful Login',
-        //   html: '<p>You have successfully logged in.</p>',
-        // });
+
+       // Send login email
+        await Email({
+          email: user.email,
+          subject: 'Successful Login',
+          html: '<p>You have successfully logged in.</p>',
+        });
 
         return res.json({
           message: 'Welcome back to FinsworthPRO',

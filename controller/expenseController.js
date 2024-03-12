@@ -56,7 +56,7 @@ exports.getAllExpenses = async(req, res) => {
     try{
 
         // grt the company's id
-        const companyId = req.body.companyId
+        const companyId = req.params.companyId
         // find if the company is existing in the database
         const company = await companyModel.findOne({companyId})
         if(!company) {
@@ -86,22 +86,27 @@ exports.getAllExpenses = async(req, res) => {
 }
 
 
-exports.getExpenses = async(req, res) => {
-    try{
-        // get the expense id from the req body
-        const {id} = req.body
-        // check if the id is existing in the database and populate the budget 
-        const oneExpenses = await expenseModel.findById(id).populate("budgetId")
-        if(!oneExpenses){ 
-            return res.status(404).json({message: "There are no expenses recorded for this budget "})
+exports.getExpenses = async (req, res) => {
+    try {
+        // Get the budget id from the request params
+        const budgetId = req.params.budgetId;
+
+        // Check if the id is provided
+        if (!budgetId) {
+            return res.status(400).json({ error: "Budget ID not provided" });
         }
-        else{
-            res.status(200).json({expenditure:oneExpenses})
+
+        // Find all expenses associated with the provided budget ID
+        const expenses = await expenseModel.find({ budgetId });
+        if (!expenses) {
+            return res.status(200).json({ expenditure: [] });
         }
-}
- catch(err){
-    res.status(500).json({
-        error: err.message
-    })
-}
-}
+        res.status(200).json({ expenses });
+    } catch (err) {
+        console.error("Error fetching expenses:", err);
+        res.status(500).json(err.message);
+    }
+};
+
+
+

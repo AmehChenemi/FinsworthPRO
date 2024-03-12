@@ -1,6 +1,6 @@
 const express= require("express")
 
-const {createBudget, getAllBudgets, deleteBudget, updateBudget, calculateAmountSpent, calculateRemainingBalance }=require('../controller/budgetController')
+const {createBudget, getAllBudgets, deleteBudget, updateBudget, calculateAmountSpent, calculateRemainingBalance, calculateAverage }=require('../controller/budgetController')
 const{authMiddleware,checkDirector}=require("../middleware/authorization")
 const router= express.Router()
 
@@ -18,6 +18,7 @@ router.post("/createBudget",authMiddleware,createBudget )
 
  router.put("/budgetBalance/:id", updateBudget)
 
+ router.get("/totalAverage", calculateAverage)
  
  router.delete("/deletebudget",authMiddleware,checkDirector, deleteBudget)
 
